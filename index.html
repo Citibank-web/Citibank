@@ -49,20 +49,35 @@
   <p id="status"></p>
 </div>
 
+<!-- Firebase SDKs -->
 <script type="module">
-import { auth, db } from './js/firebase.js';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-const usernameInput = document.getElementById("username");
-const passwordInput = document.getElementById("password");
-const btnLogin = document.getElementById("btnLogin");
-const status = document.getElementById("status");
+// ✅ Correct Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyAhH_bvUtQiOxvENXgh2Cin0fmMWsxi0z8",
+  authDomain: "lite-584ca.firebaseapp.com",
+  projectId: "lite-584ca",
+  storageBucket: "lite-584ca.appspot.com",
+  messagingSenderId: "861872738616",
+  appId: "1:861872738616:web:8b086a791e3745e5f171cd"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Admin credentials
 const ADMIN_USERNAME = "admin1";
 const ADMIN_PASSWORD = "Admin1234!";
 const ADMIN_EMAIL = `${ADMIN_USERNAME}@citibank.local`;
+
+const usernameInput = document.getElementById("username");
+const passwordInput = document.getElementById("password");
+const btnLogin = document.getElementById("btnLogin");
+const status = document.getElementById("status");
 
 btnLogin.addEventListener("click", async () => {
   const username = usernameInput.value.trim();
@@ -74,15 +89,13 @@ btnLogin.addEventListener("click", async () => {
   }
 
   try {
-    // Auto-create admin if logging in as admin1
+    // Auto-create admin1 if logging in as admin
     if(username === ADMIN_USERNAME) {
       const methods = await fetchSignInMethodsForEmail(auth, ADMIN_EMAIL);
       if(methods.length === 0) {
-        // Admin does not exist → create it
         const userCredential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
         const uid = userCredential.user.uid;
 
-        // Save admin details in Firestore
         await setDoc(doc(db, "users", uid), {
           username: ADMIN_USERNAME,
           fullName: "Administrator",
@@ -90,15 +103,12 @@ btnLogin.addEventListener("click", async () => {
           balance: 0
         });
 
-        // Map username → UID
         await setDoc(doc(db, "usernames", ADMIN_USERNAME), { uid });
       }
     }
 
     // Convert username → email for login
     const email = `${username}@citibank.local`;
-
-    // Sign in
     await signInWithEmailAndPassword(auth, email, password);
 
     // Redirect to Dashboard
@@ -110,6 +120,5 @@ btnLogin.addEventListener("click", async () => {
   }
 });
 </script>
-
 </body>
 </html>
