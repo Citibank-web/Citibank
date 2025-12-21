@@ -11,8 +11,10 @@
   .sidebar { width:200px; background:#fff; position:fixed; top:0; left:-200px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,.1); }
   .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
   .sidebar a:hover { background:#f0f0f0; }
-  .content { margin-left:20px; padding:20px; max-width:500px; }
+  .content { margin-left:20px; padding:20px; max-width:600px; }
   .profile { width:120px; border-radius:50%; display:block; margin-bottom:10px; }
+  .gallery img { width:80px; height:80px; border-radius:50%; cursor:pointer; margin:5px; border:2px solid #ccc; transition:0.2s; }
+  .gallery img.selected { border:3px solid #003366; }
   input, button { display:block; margin:10px 0; padding:10px; width:100%; }
   button { background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
   button:hover { background:#0055a5; }
@@ -34,8 +36,9 @@
 </div>
 
 <div class="content">
-  <img id="profilePhoto" class="profile" src="">
-  <input type="file" id="photoUpload" accept="image/*">
+  <h3>Select Your Profile Picture</h3>
+  <div id="photoGallery" class="gallery"></div>
+
   <input type="text" id="fullName" placeholder="Full Name">
   <button id="updateBtn" onclick="updateKYC()">Update Profile</button>
   <p id="status" style="color:red;"></p>
@@ -43,21 +46,47 @@
 
 <script>
 let currentUser;
+let selectedPhoto = "";
+
+// Your image links
+const profileLinks = [
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00086256583382535261714.jpg",
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00066532014068741309807.jpg",
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20250921-wa00001365510559851195658.jpg",
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20250921-wa00024770188439624467822.jpg",
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20250921-wa00016040536859126271013.jpg",
+  "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00104739785893116021144.jpg"
+];
 
 function loadKYC() {
   const u = JSON.parse(localStorage.getItem("currentUser"));
-  if(!u) { window.location.href="index.html"; return; }
+  if(!u){ window.location.href="index.html"; return; }
   currentUser = u;
-  document.getElementById("profilePhoto").src = u.photo;
+  selectedPhoto = u.photo;
   document.getElementById("fullName").value = u.name;
 
-  // Disable inputs if already updated once
-  if(localStorage.getItem(currentUser.username+"_kyc_done")) {
+  renderGallery();
+
+  if(localStorage.getItem(currentUser.username+"_kyc_done")){
     document.getElementById("fullName").disabled = true;
-    document.getElementById("photoUpload").disabled = true;
     document.getElementById("updateBtn").disabled = true;
     document.getElementById("status").textContent = "Profile update already done ✅";
   }
+}
+
+function renderGallery(){
+  const gallery = document.getElementById("photoGallery");
+  gallery.innerHTML = "";
+  profileLinks.forEach(link => {
+    const img = document.createElement("img");
+    img.src = link;
+    img.className = selectedPhoto === link ? "selected" : "";
+    img.onclick = () => {
+      selectedPhoto = link;
+      renderGallery();
+    };
+    gallery.appendChild(img);
+  });
 }
 
 function toggleMenu() {
@@ -70,40 +99,24 @@ function logout() {
   window.location.href="index.html";
 }
 
-function updateKYC() {
+function updateKYC(){
   const name = document.getElementById("fullName").value.trim();
-  const fileInput = document.getElementById("photoUpload");
-  if(!name) { document.getElementById("status").textContent="Name cannot be empty!"; return; }
+  if(!name){ document.getElementById("status").textContent="Name cannot be empty!"; return; }
 
   currentUser.name = name;
+  currentUser.photo = selectedPhoto;
 
-  if(fileInput.files.length > 0){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      currentUser.photo = e.target.result;
-      saveAndDisable();
-    }
-    reader.readAsDataURL(fileInput.files[0]);
-  } else {
-    saveAndDisable();
-  }
-}
-
-function saveAndDisable(){
   localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
   localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  localStorage.setItem(currentUser.username+"_kyc_done", "true"); // Mark as updated
-  document.getElementById("profilePhoto").src = currentUser.photo;
-  document.getElementById("status").textContent = "Profile updated ✅";
+  localStorage.setItem(currentUser.username+"_kyc_done","true");
 
-  // Disable inputs
+  document.getElementById("status").textContent = "Profile updated ✅";
   document.getElementById("fullName").disabled = true;
-  document.getElementById("photoUpload").disabled = true;
   document.getElementById("updateBtn").disabled = true;
 
-  // Notify dashboard
-  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new Event('storage')); // notify Dashboard
 }
 </script>
+
 </body>
 </html>
