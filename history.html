@@ -3,55 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Transaction History</title>
+<title>Transaction History - Citibank</title>
 <style>
-  body { font-family: Arial; padding:20px; background:#f2f2f2; }
-  table { width:100%; border-collapse: collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 5px 20px rgba(0,0,0,0.1); }
-  th, td { padding:12px; border-bottom:1px solid #ddd; text-align:left; }
-  th { background:#003366; color:#fff; }
+  body {
+    font-family: Arial;
+    background: #f2f2f2;
+    margin:0;
+    padding:20px;
+  }
+  .container {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+  h2 { text-align:center; color: #003366; margin-bottom: 20px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top:20px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 12px;
+    text-align: center;
+  }
+  th { background: #003366; color: #fff; }
+  tr:nth-child(even) { background: #f9f9f9; }
+  #status { text-align:center; color:red; margin-top:10px; }
 </style>
 </head>
 <body>
 
-<h2>Transaction History</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Type</th>
-      <th>Amount</th>
-      <th>Balance</th>
-    </tr>
-  </thead>
-  <tbody id="transactionsBody">
-    <!-- Transactions will populate here -->
-  </tbody>
-</table>
+<div class="container">
+  <h2>Transaction History</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>Amount ($)</th>
+        <th>Recipient / Details</th>
+      </tr>
+    </thead>
+    <tbody id="historyBody">
+      <tr><td colspan="4">Loading...</td></tr>
+    </tbody>
+  </table>
+  <p id="status"></p>
+</div>
 
 <script type="module">
 import { auth, db } from './js/firebase.js';
 import { collection, query, where, getDocs, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-const transactionsBody = document.getElementById("transactionsBody");
+const historyBody = document.getElementById("historyBody");
+const status = document.getElementById("status");
 
 onAuthStateChanged(auth, async user => {
-  if (!user) window.location.href = "https://github.com/Citibank-web/Citibank/blob/main/index.html";
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
 
-  // Fetch transactions
-  const q = query(collection(db, "transactions"), where("uid", "==", user.uid), orderBy("date", "desc"));
-  const querySnapshot = await getDocs(q);
+  try {
+    // Fetch transactions for this user
+    const q = query(
+      collection(db, "transactions"),
+      where("uid", "==", user.uid),
+      orderBy("date", "desc")
+    );
+    const querySnapshot = await getDocs(q);
 
-  querySnapshot.forEach(docSnap => {
-    const t = docSnap.data();
-    const row = `<tr>
-      <td>${new Date(t.date.seconds*1000).toLocaleString()}</td>
-      <td>${t.type}</td>
-      <td>$${t.amount.toFixed(2)}</td>
-      <td>$${t.balance.toFixed(2)}</td>
-    </tr>`;
-    transactionsBody.innerHTML += row;
-  });
+    if (querySnapshot.empty) {
+      historyBody.innerHTML = `<tr><td colspan="4">No transactions yet</td></tr>`;
+      return;
+    }
+
+    let rows = "";
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      rows += `<tr>
+        <td>${new Date(data.date.seconds * 1000).toLocaleString()}</td>
+        <td>${data.type}</td>
+        <td>${data.amount.toFixed(2)}</td>
+        <td>${data.details || "-"}</td>
+      </tr>`;
+    });
+
+    historyBody.innerHTML = rows;
+
+  } catch(err) {
+    console.error(err);
+    status.textContent = "Failed to load transactions ❌";
+  }
 });
 </script>
 
