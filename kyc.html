@@ -12,12 +12,12 @@
   .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
   .sidebar a:hover { background:#f0f0f0; }
   .content { margin-left:20px; padding:20px; max-width:600px; }
-  .profile { width:120px; border-radius:50%; display:block; margin-bottom:10px; }
   .gallery img { width:80px; height:80px; border-radius:50%; cursor:pointer; margin:5px; border:2px solid #ccc; transition:0.2s; }
   .gallery img.selected { border:3px solid #003366; }
-  input, button { display:block; margin:10px 0; padding:10px; width:100%; }
-  button { background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
+  input, button { display:block; margin:10px 0; padding:10px; width:100%; border-radius:5px; border:1px solid #ccc; }
+  button { background:#003366; color:white; border:none; cursor:pointer; }
   button:hover { background:#0055a5; }
+  #status { color:red; }
 </style>
 </head>
 <body onload="loadKYC()">
@@ -41,14 +41,14 @@
 
   <input type="text" id="fullName" placeholder="Full Name">
   <button id="updateBtn" onclick="updateKYC()">Update Profile</button>
-  <p id="status" style="color:red;"></p>
+  <p id="status"></p>
 </div>
 
 <script>
 let currentUser;
 let selectedPhoto = "";
 
-// Your image links
+// Profile image links
 const profileLinks = [
   "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00086256583382535261714.jpg",
   "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00066532014068741309807.jpg",
@@ -71,6 +71,15 @@ function loadKYC() {
     document.getElementById("fullName").disabled = true;
     document.getElementById("updateBtn").disabled = true;
     document.getElementById("status").textContent = "Profile update already done ✅";
+    // show only selected photo
+    const gallery = document.getElementById("photoGallery");
+    gallery.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = selectedPhoto;
+    img.style.width = "120px";
+    img.style.borderRadius = "50%";
+    img.style.border = "3px solid #003366";
+    gallery.appendChild(img);
   }
 }
 
@@ -89,6 +98,37 @@ function renderGallery(){
   });
 }
 
+function updateKYC(){
+  const name = document.getElementById("fullName").value.trim();
+  if(!name){ document.getElementById("status").textContent="Name cannot be empty!"; return; }
+
+  currentUser.name = name;
+  currentUser.photo = selectedPhoto;
+
+  // Save user
+  localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
+  localStorage.setItem("currentUser", JSON.stringify(currentUser));
+  localStorage.setItem(currentUser.username+"_kyc_done","true");
+
+  // Disable inputs
+  document.getElementById("fullName").disabled = true;
+  document.getElementById("updateBtn").disabled = true;
+
+  // Replace gallery with only selected photo
+  const gallery = document.getElementById("photoGallery");
+  gallery.innerHTML = "";
+  const img = document.createElement("img");
+  img.src = selectedPhoto;
+  img.style.width = "120px";
+  img.style.borderRadius = "50%";
+  img.style.border = "3px solid #003366";
+  gallery.appendChild(img);
+
+  document.getElementById("status").textContent = "Profile updated ✅";
+
+  window.dispatchEvent(new Event('storage')); // notify dashboard to refresh
+}
+
 function toggleMenu() {
   const s = document.getElementById("sidebar");
   s.style.left = s.style.left === "0px" ? "-200px" : "0px";
@@ -97,24 +137,6 @@ function toggleMenu() {
 function logout() {
   localStorage.removeItem("currentUser");
   window.location.href="index.html";
-}
-
-function updateKYC(){
-  const name = document.getElementById("fullName").value.trim();
-  if(!name){ document.getElementById("status").textContent="Name cannot be empty!"; return; }
-
-  currentUser.name = name;
-  currentUser.photo = selectedPhoto;
-
-  localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
-  localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  localStorage.setItem(currentUser.username+"_kyc_done","true");
-
-  document.getElementById("status").textContent = "Profile updated ✅";
-  document.getElementById("fullName").disabled = true;
-  document.getElementById("updateBtn").disabled = true;
-
-  window.dispatchEvent(new Event('storage')); // notify Dashboard
 }
 </script>
 
