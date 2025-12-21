@@ -65,6 +65,10 @@ menuBtn.addEventListener("click", () => {
   sidebar.classList.toggle("open");
   mainContent.classList.toggle("shift");
 });
+  
+document.getElementById("linkKYC").addEventListener("click", () => {
+  window.location.href = "kyc.html";
+});
 
 // Auto-collapse on link click
 document.querySelectorAll("#sidebar a").forEach(link => {
