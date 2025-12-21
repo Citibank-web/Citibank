@@ -5,17 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel - Citibank</title>
 <style>
-  body { font-family: Arial; margin:0; background:#f4f6f8; }
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar h2 { margin:0; }
-  .topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
-  .content { padding:20px; max-width:600px; margin:20px auto; background:white; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05); }
-  input, button { padding:10px; margin:10px 0; width:100%; border-radius:5px; border:1px solid #ccc; font-size:16px; }
-  button { cursor:pointer; background:#003366; color:white; font-weight:600; transition:0.2s; }
-  button:hover { background:#0055a5; }
-  .deleteBtn { background:#cc3300; margin-top:5px; }
-  .deleteBtn:hover { background:#ff4d4d; }
-  #status { color:green; font-weight:600; }
+body { font-family: Arial; margin:0; background:#f4f6f8; }
+.topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
+.topbar h2 { margin:0; }
+.topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
+.content { padding:20px; max-width:700px; margin:20px auto; background:white; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05); }
+.card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 6px 15px rgba(0,0,0,.05); }
+.card h3 { margin-top:0; color:#003366; }
+input, select, button { padding:10px; margin:10px 0; width:100%; border-radius:5px; border:1px solid #ccc; font-size:16px; }
+button { cursor:pointer; background:#003366; color:white; font-weight:600; transition:0.2s; }
+button:hover { background:#0055a5; }
+.deleteBtn { background:#cc3300; margin-top:5px; }
+.deleteBtn:hover { background:#ff4d4d; }
+#status { font-weight:600; margin-top:10px; }
 </style>
 </head>
 <body onload="loadAdmin()">
@@ -26,20 +28,56 @@
 </div>
 
 <div class="content">
-  <h3>Add Balance to User</h3>
-  <input type="text" id="username" placeholder="Enter username">
-  <input type="number" id="amount" placeholder="Enter amount to deposit">
-  <button onclick="addBalance()">Add Balance</button>
-  <p id="status"></p>
 
-  <hr>
-  <h3>Delete User</h3>
-  <input type="text" id="delUsername" placeholder="Enter username to delete">
-  <button class="deleteBtn" onclick="deleteUser()">Delete User</button>
+  <!-- ADD BALANCE CARD -->
+  <div class="card">
+    <h3>Add Balance to User</h3>
+    <input type="text" id="username" placeholder="Enter username">
+    <input type="number" id="amount" placeholder="Enter amount to deposit">
+    <button onclick="addBalance()">Add Balance</button>
+  </div>
+
+  <!-- CREATE USER CARD -->
+  <div class="card">
+    <h3>Create New User</h3>
+    <input type="text" id="newUsername" placeholder="Username">
+    <input type="password" id="newPassword" placeholder="Password">
+    <input type="text" id="newName" placeholder="Full Name">
+    <input type="text" id="newAcct" placeholder="Account Number">
+    <input type="number" id="newBalance" placeholder="Opening Balance">
+    <select id="newPhoto">
+      <option value="https://i.pravatar.cc/150?u=user1">Photo 1</option>
+      <option value="https://i.pravatar.cc/150?u=user2">Photo 2</option>
+      <option value="https://i.pravatar.cc/150?u=user3">Photo 3</option>
+    </select>
+    <button onclick="adminCreateUser()">Create User</button>
+  </div>
+
+  <!-- DELETE USER CARD -->
+  <div class="card">
+    <h3>Delete User</h3>
+    <input type="text" id="delUsername" placeholder="Enter username to delete">
+    <button class="deleteBtn" onclick="deleteUser()">Delete User</button>
+  </div>
+
+  <p id="status"></p>
 </div>
 
 <script>
 let currentUser;
+let users = [
+  JSON.parse(localStorage.getItem("admin1")) || {
+    username:"admin1", password:"Admin1234!", name:"Administrator", acct:"1000000001", balance:0, photo:"https://i.pravatar.cc/150?u=admin1", history:[]
+  },
+  JSON.parse(localStorage.getItem("user1")) || {
+    username:"user1", password:"User123!", name:"John Carter", acct:"4589023411", balance:25450, photo:"https://i.pravatar.cc/150?u=user1", history:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-10"}]
+  },
+  JSON.parse(localStorage.getItem("user2")) || {
+    username:"user2", password:"User456!", name:"Sarah Williams", acct:"7789041123", balance:10200, photo:"https://i.pravatar.cc/150?u=user2", history:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-12"}]
+  }
+];
+
+function saveUsers() { users.forEach(u=>localStorage.setItem(u.username, JSON.stringify(u))); }
 
 function loadAdmin(){
   currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -49,58 +87,73 @@ function loadAdmin(){
   }
 }
 
+// Add Balance
 function addBalance(){
   const uname = document.getElementById("username").value.trim();
   const amount = parseFloat(document.getElementById("amount").value);
+  const statusEl = document.getElementById("status");
 
   if(!uname || isNaN(amount) || amount <=0){
-    document.getElementById("status").textContent="Please enter valid username and amount!";
-    document.getElementById("status").style.color="red";
+    statusEl.textContent="Please enter valid username and amount!";
+    statusEl.style.color="red";
     return;
   }
 
-  let userData = JSON.parse(localStorage.getItem(uname));
-  if(!userData){
-    document.getElementById("status").textContent="User not found!";
-    document.getElementById("status").style.color="red";
-    return;
-  }
+  const user = users.find(u=>u.username===uname);
+  if(!user){ statusEl.textContent="User not found!"; statusEl.style.color="red"; return; }
 
-  // Update balance
-  userData.balance = (userData.balance || 0) + amount;
-
-  // Add deposit to history
-  if(!userData.history) userData.history = [];
-  userData.history.push({date: new Date().toLocaleString(), type:"Deposit", amount: amount});
-
-  // Save back
-  localStorage.setItem(uname, JSON.stringify(userData));
-
-  document.getElementById("status").textContent=`$${amount.toFixed(2)} added to ${uname}'s account ✅`;
-  document.getElementById("status").style.color="green";
+  user.balance += amount;
+  if(!user.history) user.history=[];
+  user.history.push({type:"Deposit", amount:amount, status:"Successful", date:new Date().toLocaleString()});
+  saveUsers();
+  statusEl.textContent=`$${amount.toFixed(2)} added to ${uname}'s account ✅`;
+  statusEl.style.color="green";
   document.getElementById("username").value="";
   document.getElementById("amount").value="";
 }
 
+// Create User
+function adminCreateUser(){
+  const uname = document.getElementById("newUsername").value.trim();
+  if(users.find(u=>u.username===uname)){ alert("Username exists!"); return; }
+
+  const newUser = {
+    username: uname,
+    password: document.getElementById("newPassword").value,
+    name: document.getElementById("newName").value,
+    acct: document.getElementById("newAcct").value,
+    balance: Number(document.getElementById("newBalance").value),
+    photo: document.getElementById("newPhoto").value,
+    history:[
+      {type:"Deposit", amount:Number(document.getElementById("newBalance").value), status:"Successful", date:new Date().toLocaleString()},
+      {type:"Withdrawal", amount:5000, status:"Successful", date:new Date().toLocaleString()}
+    ]
+  };
+
+  users.push(newUser);
+  saveUsers();
+  alert("User created ✅");
+  document.getElementById("newUsername").value="";
+  document.getElementById("newPassword").value="";
+  document.getElementById("newName").value="";
+  document.getElementById("newAcct").value="";
+  document.getElementById("newBalance").value="";
+}
+
+// Delete User
 function deleteUser(){
   const uname = document.getElementById("delUsername").value.trim();
-  if(!uname){
-    document.getElementById("status").textContent="Enter username to delete!";
-    document.getElementById("status").style.color="red";
-    return;
-  }
-
-  if(uname === "admin1"){
-    document.getElementById("status").textContent="Cannot delete Admin!";
-    document.getElementById("status").style.color="red";
-    return;
-  }
-
-  if(localStorage.getItem(uname)){
-    localStorage.removeItem(uname);
-    document.getElementById("status").textContent=`User ${uname} deleted ✅`;
-    document.getElementById("status").style.color="green";
-    document.getElementById("delUsername").value="";
+  if(!uname){ document.getElementById("status").textContent="Enter username!"; document.getElementById("status").style.color="red"; return; }
+  if(uname==="admin1"){ document.getElementById("status").textContent="Cannot delete Admin!"; document.getElementById("status").style.color="red"; return; }
+  const idx = users.findIndex(u=>u.username===uname);
+  if(idx!==-1){
+    if(confirm("Delete this user?")){
+      users.splice(idx,1);
+      saveUsers();
+      document.getElementById("status").textContent=`User ${uname} deleted ✅`;
+      document.getElementById("status").style.color="green";
+      document.getElementById("delUsername").value="";
+    }
   } else {
     document.getElementById("status").textContent="User not found!";
     document.getElementById("status").style.color="red";
