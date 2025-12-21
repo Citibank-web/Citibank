@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Citibank</title>
+<style>
+  body { font-family: Arial; margin:0; background:#f2f2f2; }
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; }
+  .topbar span { font-size:24px; cursor:pointer; margin-right:10px; }
+  .sidebar { width:200px; background:#fff; position:fixed; top:0; left:-200px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,.1); }
+  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
+  .sidebar a:hover { background:#f0f0f0; }
+  .content { margin-left:20px; padding:20px; }
+  .profile { width:100px; border-radius:50%; display:block; margin-bottom:10px; }
+  button { padding:10px 20px; margin:5px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
+  button:hover { background:#0055a5; }
+</style>
+</head>
+<body onload="loadDashboard()">
+
+<div class="topbar">
+  <span onclick="toggleMenu()">☰</span>
+  <h2>Dashboard</h2>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <a href="Dashboard.html">Dashboard</a>
+  <a href="kyc.html">KYC</a>
+  <a href="history.html">Transaction History</a>
+  <a href="admin.html">Admin Panel</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="content">
+  <img id="photo" class="profile" src="">
+  <h2 id="name"></h2>
+  <p>Account No: <span id="acct"></span></p>
+  <h1 id="balance"></h1>
+
+  <button onclick="locked()">Transfer</button>
+  <button onclick="locked()">Withdraw</button>
+</div>
+
+<script>
+let currentUser;
+
+function loadDashboard() {
+  const u = JSON.parse(localStorage.getItem("currentUser"));
+  if(!u) { window.location.href="index.html"; return; }
+  currentUser = u;
+  renderDashboard();
+}
+
+// Render Dashboard info
+function renderDashboard() {
+  document.getElementById("name").textContent = currentUser.name;
+  document.getElementById("acct").textContent = currentUser.acct;
+  document.getElementById("balance").textContent = "$" + currentUser.balance.toLocaleString();
+  document.getElementById("photo").src = currentUser.photo;
+}
+
+// Locked popup
+function locked() { alert("Account Restricted 🔐\nContact Support"); }
+
+function toggleMenu() {
+  const s = document.getElementById("sidebar");
+  s.style.left = s.style.left === "0px" ? "-200px" : "0px";
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  window.location.href="index.html";
+}
+
+// Listen for KYC updates
+window.addEventListener('storage', () => {
+  const updatedUser = JSON.parse(localStorage.getItem(currentUser.username));
+  if(updatedUser) {
+    currentUser = updatedUser;
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    renderDashboard();
+  }
+});
+</script>
+</body>
+</html>

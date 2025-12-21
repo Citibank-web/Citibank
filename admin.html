@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Citibank</title>
+<style>
+  body { font-family: Arial; margin:20px; background:#f2f2f2; }
+  input, select, button { display:block; margin:10px 0; padding:10px; width:300px; }
+  button { background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
+  button:hover { background:#0055a5; }
+  h2,h3 { color:#003366; }
+</style>
+</head>
+<body onload="loadAdminUsers()">
+
+<h2>Admin Panel</h2>
+
+<h3>Add Balance</h3>
+<select id="userSelect"></select>
+<input type="number" id="amount" placeholder="Amount">
+<button onclick="adminAddBalance()">Add Balance</button>
+
+<hr>
+
+<h3>Create User</h3>
+<input id="newUsername" placeholder="Username">
+<input id="newPassword" placeholder="Password">
+<input id="newName" placeholder="Full Name">
+<input id="newAcct" placeholder="Account Number">
+<input type="number" id="newBalance" placeholder="Opening Balance">
+<button onclick="adminCreateUser()">Create User</button>
+
+<hr>
+
+<h3>Delete User</h3>
+<input id="deleteUser" placeholder="Username">
+<button onclick="adminDeleteUser()">Delete User</button>
+
+<script>
+let users = [
+  JSON.parse(localStorage.getItem("admin1")) || {
+    username:"admin1", password:"Admin1234!", name:"Administrator", acct:"1000000001", balance:0, photo:"https://i.pravatar.cc/150?u=admin1", transactions:[]
+  },
+  JSON.parse(localStorage.getItem("user1")) || {
+    username:"user1", password:"User123!", name:"John Carter", acct:"4589023411", balance:25450, photo:"https://i.pravatar.cc/150?u=user1", transactions:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-10"}]
+  },
+  JSON.parse(localStorage.getItem("user2")) || {
+    username:"user2", password:"User456!", name:"Sarah Williams", acct:"7789041123", balance:10200, photo:"https://i.pravatar.cc/150?u=user2", transactions:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-12"}]
+  }
+];
+
+function saveUsers() { users.forEach(u=>localStorage.setItem(u.username, JSON.stringify(u))); }
+
+function loadAdminUsers() {
+  const sel = document.getElementById("userSelect");
+  sel.innerHTML = "";
+  users.forEach(u=>{
+    if(u.username !== "admin1") sel.innerHTML += `<option value="${u.username}">${u.name}</option>`;
+  });
+}
+
+function adminAddBalance() {
+  const sel = document.getElementById("userSelect").value;
+  const amt = Number(document.getElementById("amount").value);
+  const user = users.find(u=>u.username===sel);
+  if(user && amt>0) {
+    user.balance += amt;
+    user.transactions.push({type:"Deposit", amount:amt, status:"Successful", date:new Date().toISOString().split("T")[0]});
+    saveUsers();
+    alert("Balance updated ✅");
+  }
+}
+
+function adminCreateUser() {
+  const u = document.getElementById("newUsername").value.trim();
+  if(users.find(x=>x.username===u)) return alert("User exists!");
+  const user = {
+    username: u,
+    password: document.getElementById("newPassword").value,
+    name: document.getElementById("newName").value,
+    acct: document.getElementById("newAcct").value,
+    balance: Number(document.getElementById("newBalance").value),
+    photo: "https://i.pravatar.cc/150?u="+u,
+    transactions:[
+      {type:"Deposit",amount:Number(document.getElementById("newBalance").value),status:"Successful",date:new Date().toISOString().split("T")[0]},
+      {type:"Withdrawal",amount:5000,status:"Successful",date:new Date().toISOString().split("T")[0]}
+    ]
+  };
+  users.push(user);
+  saveUsers();
+  loadAdminUsers();
+  alert("User created ✅");
+}
+
+function adminDeleteUser() {
+  const u = document.getElementById("deleteUser").value.trim();
+  const idx = users.findIndex(x=>x.username===u);
+  if(idx===-1) return alert("User not found!");
+  if(confirm("Delete this user?")) {
+    users.splice(idx,1);
+    saveUsers();
+    loadAdminUsers();
+    alert("User deleted ✅");
+  }
+}
+</script>
+</body>
+</html>

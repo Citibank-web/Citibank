@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KYC - Citibank</title>
+<style>
+  body { font-family: Arial; margin:0; background:#f2f2f2; }
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; }
+  .topbar span { font-size:24px; cursor:pointer; margin-right:10px; }
+  .sidebar { width:200px; background:#fff; position:fixed; top:0; left:-200px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,.1); }
+  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
+  .sidebar a:hover { background:#f0f0f0; }
+  .content { margin-left:20px; padding:20px; max-width:500px; }
+  .profile { width:120px; border-radius:50%; display:block; margin-bottom:10px; }
+  input, button { display:block; margin:10px 0; padding:10px; width:100%; }
+  button { background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
+  button:hover { background:#0055a5; }
+</style>
+</head>
+<body onload="loadKYC()">
+
+<div class="topbar">
+  <span onclick="toggleMenu()">☰</span>
+  <h2>KYC Update</h2>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <a href="Dashboard.html">Dashboard</a>
+  <a href="kyc.html">KYC</a>
+  <a href="history.html">Transaction History</a>
+  <a href="admin.html">Admin Panel</a>
+  <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="content">
+  <img id="profilePhoto" class="profile" src="">
+  <input type="file" id="photoUpload" accept="image/*">
+  <input type="text" id="fullName" placeholder="Full Name">
+  <button id="updateBtn" onclick="updateKYC()">Update Profile</button>
+  <p id="status" style="color:red;"></p>
+</div>
+
+<script>
+let currentUser;
+
+function loadKYC() {
+  const u = JSON.parse(localStorage.getItem("currentUser"));
+  if(!u) { window.location.href="index.html"; return; }
+  currentUser = u;
+  document.getElementById("profilePhoto").src = u.photo;
+  document.getElementById("fullName").value = u.name;
+
+  // Disable inputs if already updated once
+  if(localStorage.getItem(currentUser.username+"_kyc_done")) {
+    document.getElementById("fullName").disabled = true;
+    document.getElementById("photoUpload").disabled = true;
+    document.getElementById("updateBtn").disabled = true;
+    document.getElementById("status").textContent = "Profile update already done ✅";
+  }
+}
+
+function toggleMenu() {
+  const s = document.getElementById("sidebar");
+  s.style.left = s.style.left === "0px" ? "-200px" : "0px";
+}
+
+function logout() {
+  localStorage.removeItem("currentUser");
+  window.location.href="index.html";
+}
+
+function updateKYC() {
+  const name = document.getElementById("fullName").value.trim();
+  const fileInput = document.getElementById("photoUpload");
+  if(!name) { document.getElementById("status").textContent="Name cannot be empty!"; return; }
+
+  currentUser.name = name;
+
+  if(fileInput.files.length > 0){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      currentUser.photo = e.target.result;
+      saveAndDisable();
+    }
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    saveAndDisable();
+  }
+}
+
+function saveAndDisable(){
+  localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
+  localStorage.setItem("currentUser", JSON.stringify(currentUser));
+  localStorage.setItem(currentUser.username+"_kyc_done", "true"); // Mark as updated
+  document.getElementById("profilePhoto").src = currentUser.photo;
+  document.getElementById("status").textContent = "Profile updated ✅";
+
+  // Disable inputs
+  document.getElementById("fullName").disabled = true;
+  document.getElementById("photoUpload").disabled = true;
+  document.getElementById("updateBtn").disabled = true;
+
+  // Notify dashboard
+  window.dispatchEvent(new Event('storage'));
+}
+</script>
+</body>
+</html>
