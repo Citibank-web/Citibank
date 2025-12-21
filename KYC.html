@@ -1,23 +1,50 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KYC Upload</title>
+<title>KYC - Citibank</title>
 <style>
-  body { font-family: Arial; padding:20px; background:#f2f2f2; }
-  .container { background:#fff; padding:30px; border-radius:10px; max-width:400px; margin:auto; box-shadow:0 5px 20px rgba(0,0,0,0.1); }
-  input[type=file] { display:block; margin:20px 0; }
-  button { padding:10px 20px; border:none; background:#003366; color:#fff; border-radius:5px; cursor:pointer; }
-  button:hover { background:#0055a5; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
+    margin: 0;
+    padding: 20px;
+  }
+  .container {
+    max-width: 500px;
+    margin: auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+  }
+  h2 { text-align: center; color: #003366; }
+  input, button {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+  button {
+    background: #003366;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+  button:hover { background: #0055a5; }
+  #status { text-align: center; color: red; font-size: 14px; }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>Upload Passport / KYC</h2>
-  <input type="file" id="passportInput" accept="image/*" />
-  <button id="btnUpload">Upload</button>
+  <h2>KYC Upload</h2>
+  <input type="file" id="passport" accept="image/*" />
+  <button id="btnUpload">Upload Passport</button>
   <p id="status"></p>
 </div>
 
@@ -27,38 +54,39 @@ import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/fireba
 import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
-const passportInput = document.getElementById("passportInput");
+const passportInput = document.getElementById("passport");
 const btnUpload = document.getElementById("btnUpload");
 const status = document.getElementById("status");
 
-let userUid;
-
 onAuthStateChanged(auth, user => {
   if (!user) window.location.href = "index.html";
-  userUid = user.uid;
-});
 
-btnUpload.addEventListener("click", async () => {
-  if (!passportInput.files[0]) {
-    alert("Please select an image");
-    return;
-  }
-  const file = passportInput.files[0];
-  const storageRef = ref(storage, `passports/${userUid}/${file.name}`);
-  status.textContent = "Uploading...";
+  btnUpload.addEventListener("click", async () => {
+    const file = passportInput.files[0];
+    if (!file) {
+      status.textContent = "Please select a file!";
+      return;
+    }
 
-  try {
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
+    try {
+      status.textContent = "Uploading...";
+      const storageRef = ref(storage, `passports/${user.uid}/${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
 
-    // Update Firestore user record
-    await updateDoc(doc(db, "users", userUid), { passportUrl: url });
+      // Save URL in Firestore
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, { passportURL: url });
 
-    status.textContent = "Upload successful ✅";
-  } catch (err) {
-    console.error(err);
-    status.textContent = "Upload failed ❌";
-  }
+      status.style.color = "green";
+      status.textContent = "Upload successful ✅";
+
+    } catch(err) {
+      console.error(err);
+      status.style.color = "red";
+      status.textContent = "Upload failed ❌";
+    }
+  });
 });
 </script>
 
