@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+  body { font-family: Arial; padding:20px; background:#f2f2f2; }
+  .container { background:#fff; padding:30px; border-radius:10px; max-width:500px; margin:auto; box-shadow:0 5px 20px rgba(0,0,0,0.1); }
+  input, button { width:100%; padding:10px; margin:10px 0; border-radius:5px; border:1px solid #ccc; }
+  button { background:#003366; color:#fff; border:none; cursor:pointer; }
+  button:hover { background:#0055a5; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Create New User</h2>
+  <input type="text" id="newUsername" placeholder="Username" required />
+  <input type="text" id="fullName" placeholder="Full Name" required />
+  <input type="number" id="accountBalance" placeholder="Initial Balance (USD)" required />
+  <button id="btnCreateUser">Create User</button>
+  <p id="status"></p>
+</div>
+
+<script type="module">
+import { auth, db } from './js/firebase.js';
+import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+const newUsername = document.getElementById("newUsername");
+const fullNameInput = document.getElementById("fullName");
+const accountBalance = document.getElementById("accountBalance");
+const btnCreateUser = document.getElementById("btnCreateUser");
+const status = document.getElementById("status");
+
+let currentUserUid;
+
+onAuthStateChanged(auth, user => {
+  if (!user) window.location.href = "https://github.com/Citibank-web/Citibank/blob/main/index.html";
+  currentUserUid = user.uid;
+});
+
+btnCreateUser.addEventListener("click", async () => {
+  const username = newUsername.value.trim();
+  const fullName = fullNameInput.value.trim();
+  const balance = parseFloat(accountBalance.value) || 0;
+
+  if (!username || !fullName) {
+    alert("Fill all fields");
+    return;
+  }
+
+  const email = `${username}@citibank.local`;
+  const tempPassword = "User1234!"; // default password
+
+  try {
+    // Create Firebase Auth user
+    const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
+    const uid = userCredential.user.uid;
+
+    // Save user record
+    await setDoc(doc(db, "users", uid), {
+      username,
+      fullName,
+      accountNumber: `ACC-${Math.floor(Math.random()*900000+100000)}`,
+      balance,
+      role: "user",
+      passportUrl: ""
+    });
+
+    // Map username → uid for login
+    await setDoc(doc(db, "usernames", username), { uid });
+
+    status.textContent = `User ${username} created with password: User1234!`;
+  } catch(err) {
+    console.error(err);
+    status.textContent = "Failed to create user ❌";
+  }
+});
+</script>
+
+</body>
+</html>
