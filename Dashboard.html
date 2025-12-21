@@ -5,16 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial; margin:0; background:#f2f2f2; }
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; }
-  .topbar span { font-size:24px; cursor:pointer; margin-right:10px; }
-  .sidebar { width:200px; background:#fff; position:fixed; top:0; left:-200px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,.1); }
-  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
+  body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
+  
+  /* Topbar */
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
+  .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
+  .topbar h2 { margin:0; }
+
+  /* Sidebar */
+  .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
+  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
   .sidebar a:hover { background:#f0f0f0; }
-  .content { margin-left:20px; padding:20px; }
-  .profile { width:100px; border-radius:50%; display:block; margin-bottom:10px; }
-  button { padding:10px 20px; margin:5px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
-  button:hover { background:#0055a5; }
+
+  /* Main content */
+  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
+
+  /* Profile card */
+  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
+  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
+  .info { display:flex; flex-direction:column; }
+  .info h3 { margin:0; font-size:24px; color:#003366; }
+  .info p { margin:4px 0; font-size:16px; color:#555; }
+
+  /* Buttons */
+  .actions { display:flex; gap:15px; margin-top:10px; }
+  .btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
+  .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
+  .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
+  .btn:hover { opacity:0.9; }
+
+  @media(max-width:768px){
+    .content { margin-left:10px; padding:10px; }
+    .card { flex-direction:column; align-items:center; text-align:center; }
+    .profile-pic { margin-bottom:15px; margin-right:0; }
+    .actions { flex-direction:column; }
+  }
 </style>
 </head>
 <body onload="loadDashboard()">
@@ -22,6 +47,7 @@
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
+  <button onclick="logout()" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -29,43 +55,41 @@
   <a href="kyc.html">KYC</a>
   <a href="history.html">Transaction History</a>
   <a href="admin.html">Admin Panel</a>
-  <a href="#" onclick="logout()">Logout</a>
 </div>
 
 <div class="content">
-  <img id="photo" class="profile" src="">
-  <h2 id="name"></h2>
-  <p>Account No: <span id="acct"></span></p>
-  <h1 id="balance"></h1>
-
-  <button onclick="locked()">Transfer</button>
-  <button onclick="locked()">Withdraw</button>
+  <div class="card">
+    <img id="profilePic" class="profile-pic" src="">
+    <div class="info">
+      <h3 id="fullName"></h3>
+      <p>Account Number: <span id="accountNumber"></span></p>
+      <p>Balance: $<span id="balance"></span></p>
+      <div class="actions">
+        <button class="btn btn-transfer" onclick="alert('Account Locked, contact Support 🔐')">Transfer</button>
+        <button class="btn btn-withdraw" onclick="alert('Account Locked, contact Support 🔐')">Withdraw</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
 let currentUser;
 
-function loadDashboard() {
+function loadDashboard(){
   const u = JSON.parse(localStorage.getItem("currentUser"));
-  if(!u) { window.location.href="index.html"; return; }
+  if(!u){ window.location.href="index.html"; return; }
   currentUser = u;
-  renderDashboard();
+
+  document.getElementById("profilePic").src = currentUser.photo || "https://via.placeholder.com/120";
+  document.getElementById("fullName").textContent = currentUser.name || currentUser.username;
+  document.getElementById("accountNumber").textContent = currentUser.accountNumber || "1000000001";
+  document.getElementById("balance").textContent = currentUser.balance?.toFixed(2) || "0.00";
 }
 
-// Render Dashboard info
-function renderDashboard() {
-  document.getElementById("name").textContent = currentUser.name;
-  document.getElementById("acct").textContent = currentUser.acct;
-  document.getElementById("balance").textContent = "$" + currentUser.balance.toLocaleString();
-  document.getElementById("photo").src = currentUser.photo;
-}
-
-// Locked popup
-function locked() { alert("Account Restricted 🔐\nContact Support"); }
-
+// Sidebar toggle
 function toggleMenu() {
   const s = document.getElementById("sidebar");
-  s.style.left = s.style.left === "0px" ? "-200px" : "0px";
+  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
 function logout() {
@@ -73,15 +97,9 @@ function logout() {
   window.location.href="index.html";
 }
 
-// Listen for KYC updates
-window.addEventListener('storage', () => {
-  const updatedUser = JSON.parse(localStorage.getItem(currentUser.username));
-  if(updatedUser) {
-    currentUser = updatedUser;
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-    renderDashboard();
-  }
-});
+// Live update if KYC changes
+window.addEventListener('storage', loadDashboard);
 </script>
+
 </body>
 </html>
