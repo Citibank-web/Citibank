@@ -5,22 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transaction History - Citibank</title>
 <style>
-  body { font-family: Arial; margin:0; background:#f2f2f2; }
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; }
-  .topbar span { font-size:24px; cursor:pointer; margin-right:10px; }
-  .sidebar { width:200px; background:#fff; position:fixed; top:0; left:-200px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 5px rgba(0,0,0,.1); }
-  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; }
+  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
+  
+  /* Topbar */
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
+  .topbar h2 { margin:0; }
+  .topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
+
+  /* Sidebar */
+  .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
+  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
   .sidebar a:hover { background:#f0f0f0; }
-  .content { margin-left:20px; padding:20px; max-width:600px; }
-  table { width:100%; border-collapse: collapse; margin-top:10px; }
-  th, td { padding:10px; border:1px solid #ccc; text-align:left; }
+
+  /* Content */
+  .content { margin-left:20px; padding:20px; max-width:800px; margin-top:20px; }
+  .transaction-card { background:white; border-radius:12px; padding:15px 20px; margin-bottom:15px; box-shadow:0 5px 15px rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center; }
+  .tx-info { display:flex; flex-direction:column; }
+  .tx-type { font-weight:600; font-size:16px; }
+  .tx-date { font-size:14px; color:#555; }
+  .tx-amount { font-weight:600; font-size:16px; }
+  .tx-deposit { color:green; }
+  .tx-withdraw { color:red; }
+
+  @media(max-width:768px){
+    .content { margin-left:10px; padding:10px; }
+    .transaction-card { flex-direction:column; align-items:flex-start; }
+    .tx-amount { margin-top:5px; }
+  }
 </style>
 </head>
 <body onload="loadHistory()">
 
 <div class="topbar">
-  <span onclick="toggleMenu()">☰</span>
   <h2>Transaction History</h2>
+  <button onclick="logout()">Logout</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -28,22 +46,11 @@
   <a href="kyc.html">KYC</a>
   <a href="history.html">Transaction History</a>
   <a href="admin.html">Admin Panel</a>
-  <a href="#" onclick="logout()">Logout</a>
 </div>
 
 <div class="content">
-  <h3>Transaction History</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Type</th>
-        <th>Amount ($)</th>
-      </tr>
-    </thead>
-    <tbody id="historyBody">
-    </tbody>
-  </table>
+  <h3>Your Transactions</h3>
+  <div id="historyList"></div>
 </div>
 
 <script>
@@ -66,29 +73,37 @@ function loadHistory(){
   renderHistory();
 }
 
-// Render table
+// Render transactions
 function renderHistory(){
-  const tbody = document.getElementById("historyBody");
-  tbody.innerHTML = "";
+  const container = document.getElementById("historyList");
+  container.innerHTML = "";
   currentUser.history.forEach(tx => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${tx.date}</td><td>${tx.type}</td><td>${tx.amount.toFixed(2)}</td>`;
-    tbody.appendChild(tr);
+    const div = document.createElement("div");
+    div.className = "transaction-card";
+    div.innerHTML = `
+      <div class="tx-info">
+        <span class="tx-type ${tx.type==="Deposit" ? "tx-deposit" : "tx-withdraw"}">${tx.type}</span>
+        <span class="tx-date">${tx.date}</span>
+      </div>
+      <div class="tx-amount ${tx.type==="Deposit" ? "tx-deposit" : "tx-withdraw"}">$${tx.amount.toFixed(2)}</div>
+    `;
+    container.appendChild(div);
   });
 }
 
 // Sidebar toggle
 function toggleMenu() {
   const s = document.getElementById("sidebar");
-  s.style.left = s.style.left === "0px" ? "-200px" : "0px";
+  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
+// Logout
 function logout() {
   localStorage.removeItem("currentUser");
   window.location.href="index.html";
 }
 
-// Live update if KYC changes
+// Live update when admin adds deposit
 window.addEventListener('storage', loadHistory);
 </script>
 
