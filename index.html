@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Citibank Login</title>
 <style>
-  /* Keep your current UI exactly */
   body {
     font-family: Arial, sans-serif;
     background: #f2f2f2;
@@ -52,13 +51,18 @@
 
 <script type="module">
 import { auth, db } from './js/firebase.js';
-import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
 const btnLogin = document.getElementById("btnLogin");
 const status = document.getElementById("status");
+
+// Admin credentials
+const ADMIN_USERNAME = "admin1";
+const ADMIN_PASSWORD = "Admin1234!";
+const ADMIN_EMAIL = `${ADMIN_USERNAME}@citibank.local`;
 
 btnLogin.addEventListener("click", async () => {
   const username = usernameInput.value.trim();
@@ -70,24 +74,29 @@ btnLogin.addEventListener("click", async () => {
   }
 
   try {
-    // Map username → UID
-    const userMapRef = doc(db, "usernames", username);
-    const userMapSnap = await getDoc(userMapRef);
-    if (!userMapSnap.exists()) {
-      status.textContent = "Invalid username!";
-      return;
-    }
-    const uid = userMapSnap.data().uid;
+    // Auto-create admin if logging in as admin1
+    if(username === ADMIN_USERNAME) {
+      const methods = await fetchSignInMethodsForEmail(auth, ADMIN_EMAIL);
+      if(methods.length === 0) {
+        // Admin does not exist → create it
+        const userCredential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+        const uid = userCredential.user.uid;
 
-    // Get user email from UID
-    const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-      status.textContent = "User not found!";
-      return;
+        // Save admin details in Firestore
+        await setDoc(doc(db, "users", uid), {
+          username: ADMIN_USERNAME,
+          fullName: "Administrator",
+          accountNumber: 1000000001,
+          balance: 0
+        });
+
+        // Map username → UID
+        await setDoc(doc(db, "usernames", ADMIN_USERNAME), { uid });
+      }
     }
 
-    const email = `${username}@citibank.local`; // must match how admin created users
+    // Convert username → email for login
+    const email = `${username}@citibank.local`;
 
     // Sign in
     await signInWithEmailAndPassword(auth, email, password);
@@ -97,7 +106,7 @@ btnLogin.addEventListener("click", async () => {
 
   } catch(err) {
     console.error(err);
-    status.textContent = "Login failed ❌ Check password";
+    status.textContent = "Login failed ❌ Check username or password";
   }
 });
 </script>
