@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KYC Upload</title>
+<style>
+  body { font-family: Arial; padding:20px; background:#f2f2f2; }
+  .container { background:#fff; padding:30px; border-radius:10px; max-width:400px; margin:auto; box-shadow:0 5px 20px rgba(0,0,0,0.1); }
+  input[type=file] { display:block; margin:20px 0; }
+  button { padding:10px 20px; border:none; background:#003366; color:#fff; border-radius:5px; cursor:pointer; }
+  button:hover { background:#0055a5; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Upload Passport / KYC</h2>
+  <input type="file" id="passportInput" accept="image/*" />
+  <button id="btnUpload">Upload</button>
+  <p id="status"></p>
+</div>
+
+<script type="module">
+import { auth, db, storage } from './js/firebase.js';
+import { ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js';
+import { doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+const passportInput = document.getElementById("passportInput");
+const btnUpload = document.getElementById("btnUpload");
+const status = document.getElementById("status");
+
+let userUid;
+
+onAuthStateChanged(auth, user => {
+  if (!user) window.location.href = "index.html";
+  userUid = user.uid;
+});
+
+btnUpload.addEventListener("click", async () => {
+  if (!passportInput.files[0]) {
+    alert("Please select an image");
+    return;
+  }
+  const file = passportInput.files[0];
+  const storageRef = ref(storage, `passports/${userUid}/${file.name}`);
+  status.textContent = "Uploading...";
+
+  try {
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+
+    // Update Firestore user record
+    await updateDoc(doc(db, "users", userUid), { passportUrl: url });
+
+    status.textContent = "Upload successful ✅";
+  } catch (err) {
+    console.error(err);
+    status.textContent = "Upload failed ❌";
+  }
+});
+</script>
+
+</body>
+</html>
