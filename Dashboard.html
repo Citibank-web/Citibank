@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citibank Dashboard</title>
+<style>
+  body { font-family: Arial; margin:0; background:#f2f2f2; }
+  header { background:#003366; color:#fff; padding:15px; display:flex; align-items:center; }
+  header .menu-btn { font-size:24px; cursor:pointer; margin-right:20px; }
+  #sidebar { width:250px; background:#0055a5; color:#fff; position:fixed; height:100%; top:0; left:-250px; transition:0.3s; padding-top:50px; }
+  #sidebar.open { left:0; }
+  #sidebar a { display:block; padding:15px; color:#fff; text-decoration:none; }
+  #sidebar a:hover { background:#003366; }
+  main { margin-left:0; transition:0.3s; padding:20px; }
+  main.shift { margin-left:250px; }
+  .dashboard-card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.1); margin-bottom:20px; text-align:center; }
+  button { padding:10px 20px; border:none; background:#003366; color:#fff; border-radius:5px; margin:10px; cursor:pointer; }
+  button:hover { background:#0055a5; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="menu-btn">&#9776;</span>
+  <h1>Citibank Dashboard</h1>
+</header>
+
+<div id="sidebar">
+  <a href="#" id="linkDashboard">Dashboard</a>
+  <a href="#" id="linkKYC">KYC</a>
+  <a href="#" id="linkHistory">Transaction History</a>
+  <a href="#" id="linkAdmin">Admin Panel</a>
+  <a href="#" id="linkLogout">Logout</a>
+</div>
+
+<main id="mainContent">
+  <div class="dashboard-card">
+    <img id="passport" src="" alt="Passport" style="width:120px; border-radius:50%; margin-bottom:10px;">
+    <h2 id="fullName">Full Name</h2>
+    <p>Account Number: <span id="accountNumber"></span></p>
+    <p>Balance: $<span id="balance"></span></p>
+    <button id="btnTransfer">Transfer</button>
+    <button id="btnWithdraw">Withdraw</button>
+  </div>
+</main>
+
+<script type="module">
+import { auth, db } from './js/firebase.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const sidebar = document.getElementById("sidebar");
+const menuBtn = document.querySelector(".menu-btn");
+const mainContent = document.getElementById("mainContent");
+const btnTransfer = document.getElementById("btnTransfer");
+const btnWithdraw = document.getElementById("btnWithdraw");
+const passportImg = document.getElementById("passport");
+const fullNameEl = document.getElementById("fullName");
+const accountNumberEl = document.getElementById("accountNumber");
+const balanceEl = document.getElementById("balance");
+
+// Toggle sidebar
+menuBtn.addEventListener("click", () => {
+  sidebar.classList.toggle("open");
+  mainContent.classList.toggle("shift");
+});
+
+// Auto-collapse on link click
+document.querySelectorAll("#sidebar a").forEach(link => {
+  link.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+    mainContent.classList.remove("shift");
+  });
+});
+
+// Locked actions
+btnTransfer.addEventListener("click", () => alert("🔐 Account Locked, contact Support"));
+btnWithdraw.addEventListener("click", () => alert("🔐 Account Locked, contact Support"));
+
+// Check auth state
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+  // Fetch user info from Firestore
+  const username = user.email.split("@")[0];
+  const userDoc = await getDoc(doc(db, "users", user.uid));
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    fullNameEl.textContent = data.fullName || "Full Name";
+    accountNumberEl.textContent = data.accountNumber || "N/A";
+    balanceEl.textContent = data.balance?.toFixed(2) || "0.00";
+    passportImg.src = data.passportUrl || "https://via.placeholder.com/120";
+  }
+});
+
+// Logout
+document.getElementById("linkLogout").addEventListener("click", async () => {
+  await signOut(auth);
+  window.location.href = "index.html";
+});
+</script>
+
+</body>
+</html>
