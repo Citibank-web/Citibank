@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,190 +6,163 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; }
+  body { font-family: Arial, sans-serif; margin:0; display:flex; background:#f4f6f8; }
 
   /* Sidebar */
   .sidebar {
-    width:160px; background:#003366; color:white; height:100vh; padding-top:20px;
-    box-shadow:2px 0 10px rgba(0,0,0,.1); position:fixed; top:0; left:0;
+    width:60px; background:#003366; color:white; height:100vh; padding-top:20px; display:flex; flex-direction:column; align-items:center;
   }
-  .sidebar a {
-    display:block; padding:12px; color:white; text-decoration:none; font-weight:500;
-  }
+  .sidebar a { color:white; text-decoration:none; display:flex; flex-direction:column; align-items:center; padding:15px 0; width:100%; font-size:18px; }
+  .sidebar a.active { background:#0055a5; }
   .sidebar a:hover { background:#0055a5; }
 
   /* Content */
-  .content { margin-left:160px; padding:20px; flex:1; }
+  .content { flex:1; padding:40px; display:flex; flex-direction:column; align-items:center; }
 
-  /* Admin login form */
-  #adminLogin { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100%; }
-  #adminLogin input { padding:10px; margin:10px 0; width:250px; border-radius:5px; border:1px solid #ccc; }
-  #adminLogin button { padding:10px 20px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
-  #adminLogin button:hover { background:#0055a5; }
-
-  /* Card style */
-  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); }
-  .card h2 { margin-top:0; color:#003366; }
-
-  /* Form inside card */
-  .card input { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:1px solid #ccc; }
-  .card button { margin-top:10px; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; color:white; font-weight:600; }
-  .btn-add { background:linear-gradient(45deg,#0066cc,#3399ff); }
-  .btn-save { background:green; }
-  .btn-delete { background:#cc3300; }
+  h2 { color:#003366; margin-bottom:20px; }
 
   /* Table */
-  table { width:100%; border-collapse:collapse; margin-top:15px; }
-  th, td { padding:12px; border:1px solid #ccc; text-align:left; }
+  table { border-collapse: collapse; width:100%; max-width:900px; background:white; border-radius:12px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.05); }
+  th, td { padding:12px 15px; text-align:left; }
   th { background:#003366; color:white; }
+  tr:nth-child(even) { background:#f4f6f8; }
+  tr:hover { background:#e0e7ff; }
 
-  @media(max-width:768px){
-    .sidebar { width:140px; }
-    .content { margin-left:140px; }
-  }
+  button { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:600; margin:2px; }
+  .approve { background:green; color:white; }
+  .reject { background:red; color:white; }
+  .create { background:#0066cc; color:white; margin-bottom:15px; }
+
+  /* Form */
+  #createUserForm { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  #createUserForm input { padding:8px; border-radius:6px; border:1px solid #ccc; flex:1; min-width:120px; }
 </style>
 </head>
 <body>
 
-<div id="adminLogin">
-  <h2>Admin Login</h2>
-  <input type="password" id="adminPass" placeholder="Enter Admin Password">
-  <button onclick="checkAdminPass()">Login</button>
+<div class="sidebar">
+  <a href="Dashboard.html" id="link-dashboard">🏠<span>Dash</span></a>
+  <a href="kyc.html" id="link-kyc">📝<span>KYC</span></a>
+  <a href="history.html" id="link-history">📜<span>History</span></a>
+  <a href="admin.html" id="link-admin" class="active">🛠️<span>Admin</span></a>
+  <a href="#" id="logoutLink">🚪<span>Logout</span></a>
 </div>
 
-<div id="adminContent" style="display:none;">
-  <div class="sidebar">
-    <a href="Dashboard.html">Dashboard</a>
-    <a href="kyc.html">KYC</a>
-    <a href="history.html">Transaction History</a>
-    <a href="#" id="logoutLink">Logout</a>
-  </div>
+<div class="content">
+  <h2>Admin Panel</h2>
 
-  <div class="content">
-    <div class="card">
-      <h2>Add New User</h2>
-      <input type="text" id="newFullName" placeholder="Full Name">
-      <input type="text" id="newEmail" placeholder="Email">
-      <input type="text" id="newAcct" placeholder="Account Number">
-      <input type="number" id="newBalance" placeholder="Balance">
-      <input type="text" id="newPhoto" placeholder="Profile Photo URL">
-      <button class="btn-add" onclick="addUser()">Add User</button>
-    </div>
+  <form id="createUserForm">
+    <input type="email" placeholder="Email" id="newEmail" required>
+    <input type="password" placeholder="Password" id="newPassword" required>
+    <input type="text" placeholder="Full Name" id="newFullName" required>
+    <input type="text" placeholder="Account #" id="newAcct" required>
+    <input type="number" placeholder="Balance" id="newBalance" required>
+    <input type="text" placeholder="Photo URL" id="newPhoto" required>
+    <button type="submit" class="create">Create User</button>
+  </form>
 
-    <div class="card">
-      <h2>User List</h2>
-      <table id="userTable">
-        <thead>
-          <tr>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Account No</th>
-            <th>Balance</th>
-            <th>Photo</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Account #</th>
+        <th>Balance</th>
+        <th>KYC</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
 </div>
 
 <script type="module">
 import { supabase } from './supabase.js';
 
-const ADMIN_PASSWORD = "Admin1234!";
-
-async function checkAdminPass() {
-  const entered = document.getElementById("adminPass").value;
-  if(entered === ADMIN_PASSWORD) {
-    document.getElementById("adminLogin").style.display = "none";
-    document.getElementById("adminContent").style.display = "flex";
-    await loadUsers();
-  } else {
-    alert("Incorrect password! Access denied.");
-  }
+// Password protection
+const password = prompt("Enter Admin Password:");
+if(password !== "Admin1234!") {
+  alert("Unauthorized 🔐");
+  window.location.href = "index.html";
 }
 
-// Load users
+// Logout
+document.getElementById("logoutLink").addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  location.href = "index.html";
+});
+
+// Load all users
 async function loadUsers() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if(authError || !user) location.href = "index.html";
+  if(authError || !user) location.href="index.html";
 
-  const { data, error } = await supabase.from('users').select('*');
-  if(error) { console.error(error); return; }
+  const { data, error } = await supabase.from("users").select("*");
+  if(error) return alert("Error loading users: " + error.message);
 
-  const tbody = document.querySelector("#userTable tbody");
+  const tbody = document.getElementById("userTable");
   tbody.innerHTML = "";
 
   data.forEach(u => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td contenteditable="true">${u.full_name}</td>
+      <td>${u.full_name}</td>
       <td>${u.email}</td>
-      <td contenteditable="true">${u.account_number}</td>
-      <td contenteditable="true">${u.balance}</td>
-      <td contenteditable="true">${u.photo}</td>
+      <td>${u.account_number}</td>
+      <td>$${u.balance.toFixed(2)}</td>
+      <td>${u.kyc_done ? '✅' : '❌'}</td>
       <td>
-        <button class="btn-save" onclick="updateUser('${u.id}', this)">Save</button>
-        <button class="btn-delete" onclick="deleteUser('${u.id}')">Delete</button>
+        <button class="approve" onclick="approveUser('${u.id}')">Approve</button>
+        <button class="reject" onclick="rejectUser('${u.id}')">Reject</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-// Add user
-async function addUser() {
-  const fullName = document.getElementById("newFullName").value;
+// Approve/reject placeholder functions
+async function approveUser(id) {
+  alert("Approved user: " + id);
+}
+
+async function rejectUser(id) {
+  alert("Rejected user: " + id);
+}
+
+// Create user programmatically
+document.getElementById("createUserForm").addEventListener("submit", async e => {
+  e.preventDefault();
   const email = document.getElementById("newEmail").value;
+  const password = document.getElementById("newPassword").value;
+  const fullName = document.getElementById("newFullName").value;
   const acct = document.getElementById("newAcct").value;
-  const balance = parseFloat(document.getElementById("newBalance").value) || 0;
+  const balance = parseFloat(document.getElementById("newBalance").value);
   const photo = document.getElementById("newPhoto").value;
 
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-    email, password: "DefaultPass123"
-  });
-  if(authError) { alert(authError.message); return; }
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({ email, password });
+  if(authError) return alert("Error creating auth user: " + authError.message);
 
-  const { data, error } = await supabase.from('users').insert([{
-    id: authUser.user.id,
+  const userId = authUser.user.id;
+
+  const { data, error } = await supabase.from("users").insert([{
+    id: userId,
     full_name: fullName,
     email,
     account_number: acct,
     balance,
-    photo
+    photo,
+    kyc_done: false,
+    transaction_history: []
   }]);
-  if(error) { alert(error.message); return; }
-  alert("User added successfully!");
+  if(error) return alert("Error creating user profile: " + error.message);
+
+  alert("User created successfully!");
+  document.getElementById("createUserForm").reset();
   loadUsers();
-}
-
-// Update user
-async function updateUser(id, btn) {
-  const tr = btn.parentElement.parentElement;
-  const [full_name, , account_number, balance, photo] = [...tr.children].map(td => td.innerText);
-  const { data, error } = await supabase.from('users')
-    .update({ full_name, account_number, balance: parseFloat(balance), photo })
-    .eq('id', id);
-  if(error) { alert(error.message); return; }
-  alert("User updated!");
-}
-
-// Delete user
-async function deleteUser(id) {
-  if(!confirm("Are you sure to delete this user?")) return;
-  const { data, error } = await supabase.from('users').delete().eq('id', id);
-  if(error) { alert(error.message); return; }
-  alert("User deleted!");
-  loadUsers();
-}
-
-// Logout
-document.getElementById("logoutLink").addEventListener("click", async () => {
-  await supabase.auth.signOut();
-  location.href="index.html";
 });
+
+loadUsers();
 </script>
+
 </body>
 </html>
