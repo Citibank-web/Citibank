@@ -6,11 +6,11 @@
 <title>Dashboard - Citibank</title>
 <style>
   body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
-
+  
   /* Topbar */
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; position:fixed; width:100%; top:0; z-index:1001; }
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
   .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
-  .topbar h2 { margin:0; flex:1; text-align:center; }
+  .topbar h2 { margin:0; }
 
   /* Sidebar */
   .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
@@ -18,7 +18,7 @@
   .sidebar a:hover { background:#f0f0f0; }
 
   /* Main content */
-  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:80px; }
+  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
 
   /* Profile card */
   .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
@@ -44,6 +44,8 @@
 </head>
 <body onload="loadDashboard()">
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
@@ -54,7 +56,7 @@
   <a href="Dashboard.html">Dashboard</a>
   <a href="kyc.html">KYC</a>
   <a href="history.html">Transaction History</a>
-  <a href="admin.html" id="adminLink">Admin Panel</a>
+  <a href="admin.html">Admin Panel</a>
 </div>
 
 <div class="content">
@@ -65,36 +67,40 @@
       <p>Account Number: <span id="accountNumber"></span></p>
       <p>Balance: $<span id="balance"></span></p>
       <div class="actions">
-        <button class="btn btn-transfer" onclick="alert('Account Locked, contact Support 🔐')">Transfer</button>
-        <button class="btn btn-withdraw" onclick="alert('Account Locked, contact Support 🔐')">Withdraw</button>
+        <button class="btn btn-transfer" onclick="transfer()">Transfer</button>
+        <button class="btn btn-withdraw" onclick="withdraw()">Withdraw</button>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+const SUPABASE_URL = 'https://aaljhxyrqnewvhejtoik.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser;
 
-function loadDashboard(){
-  const u = JSON.parse(localStorage.getItem("currentUser"));
-  if(!u){ window.location.href="index.html"; return; }
-  currentUser = u;
+// Load dashboard
+async function loadDashboard(){
+  const stored = localStorage.getItem("currentUser");
+  if(!stored) return window.location.href="index.html";
+  currentUser = JSON.parse(stored);
 
-  document.getElementById("profilePic").src = currentUser.photo || "https://via.placeholder.com/120";
-  document.getElementById("fullName").textContent = currentUser.name || currentUser.username;
-  document.getElementById("accountNumber").textContent = currentUser.acct || "1000000001";
-  document.getElementById("balance").textContent = currentUser.balance?.toFixed(2) || "0.00";
+  const { data:user, error } = await supabase.from('users').select('*').eq('username', currentUser.username).single();
+  if(error || !user) return window.location.href="index.html";
+  currentUser = user;
 
-  // Show admin link only if admin
-  if(currentUser.username !== "admin1"){
-    document.getElementById("adminLink").style.display = "none";
-  }
+  document.getElementById("profilePic").src = user.photo || "https://via.placeholder.com/120";
+  document.getElementById("fullName").textContent = user.name || user.username;
+  document.getElementById("accountNumber").textContent = user.acct;
+  document.getElementById("balance").textContent = (user.balance || 0).toFixed(2);
 }
 
 // Sidebar toggle
 function toggleMenu() {
   const s = document.getElementById("sidebar");
-  s.style.left = (s.style.left === "0px") ? "-220px" : "0px";
+  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
 // Logout
@@ -103,9 +109,48 @@ function logout() {
   window.location.href="index.html";
 }
 
-// Auto update if KYC changes
-window.addEventListener('storage', loadDashboard);
-</script>
+// Transfer function (demo alert, replace with actual implementation)
+async function transfer(){
+  alert("Transfer function will be implemented 🔐");
+}
 
+// Withdraw function
+async function withdraw(){
+  const amount = prompt("Enter amount to withdraw:");
+  if(!amount || isNaN(amount) || Number(amount)<=0){
+    alert("Invalid amount!");
+    return;
+  }
+
+  const withdrawAmount = Number(amount);
+  if(withdrawAmount > currentUser.balance){
+    alert("Insufficient balance!");
+    return;
+  }
+
+  const newBalance = currentUser.balance - withdrawAmount;
+
+  // Update user balance in Supabase
+  const { error:updateError } = await supabase.from('users').update({balance:newBalance}).eq('username', currentUser.username);
+  if(updateError){
+    alert("Failed to withdraw!");
+    return;
+  }
+
+  // Insert transaction
+  await supabase.from('transactions').insert([{
+    username: currentUser.username,
+    type: "Withdrawal",
+    amount: withdrawAmount,
+    status: "Successful",
+    date: new Date().toISOString()
+  }]);
+
+  alert(`$${withdrawAmount.toFixed(2)} withdrawn successfully ✅`);
+  currentUser.balance = newBalance;
+  document.getElementById("balance").textContent = newBalance.toFixed(2);
+}
+
+</script>
 </body>
 </html>
