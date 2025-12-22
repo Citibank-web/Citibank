@@ -29,7 +29,7 @@ button:hover { background:#0055a5; }
 
 <div class="content">
 
-  <!-- ADD BALANCE CARD -->
+  <!-- ADD BALANCE -->
   <div class="card">
     <h3>Add Balance to User</h3>
     <input type="text" id="username" placeholder="Enter username">
@@ -37,7 +37,7 @@ button:hover { background:#0055a5; }
     <button onclick="addBalance()">Add Balance</button>
   </div>
 
-  <!-- CREATE USER CARD -->
+  <!-- CREATE USER -->
   <div class="card">
     <h3>Create New User</h3>
     <input type="text" id="newUsername" placeholder="Username">
@@ -50,10 +50,10 @@ button:hover { background:#0055a5; }
       <option value="https://i.pravatar.cc/150?u=user2">Photo 2</option>
       <option value="https://i.pravatar.cc/150?u=user3">Photo 3</option>
     </select>
-    <button onclick="adminCreateUser()">Create User</button>
+    <button onclick="createUser()">Create User</button>
   </div>
 
-  <!-- DELETE USER CARD -->
+  <!-- DELETE USER -->
   <div class="card">
     <h3>Delete User</h3>
     <input type="text" id="delUsername" placeholder="Enter username to delete">
@@ -63,76 +63,106 @@ button:hover { background:#0055a5; }
   <p id="status"></p>
 </div>
 
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+const SUPABASE_URL = 'https://aaljhxyrqnewvhejtoik.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser;
-let users = [
-  JSON.parse(localStorage.getItem("admin1")) || {
-    username:"admin1", password:"Admin1234!", name:"Administrator", acct:"1000000001", balance:0, photo:"https://i.pravatar.cc/150?u=admin1", history:[]
-  },
-  JSON.parse(localStorage.getItem("user1")) || {
-    username:"user1", password:"User123!", name:"John Carter", acct:"4589023411", balance:25450, photo:"https://i.pravatar.cc/150?u=user1", history:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-10"}]
-  },
-  JSON.parse(localStorage.getItem("user2")) || {
-    username:"user2", password:"User456!", name:"Sarah Williams", acct:"7789041123", balance:10200, photo:"https://i.pravatar.cc/150?u=user2", history:[{type:"Withdrawal",amount:5000,status:"Successful",date:"2025-01-12"}]
-  }
-];
 
-function saveUsers() { users.forEach(u=>localStorage.setItem(u.username, JSON.stringify(u))); }
-
-function loadAdmin(){
-  currentUser = JSON.parse(localStorage.getItem("currentUser"));
-  if(!currentUser || currentUser.username !== "admin1") {
+async function loadAdmin(){
+  const stored = localStorage.getItem("currentUser");
+  if(!stored) return window.location.href="index.html";
+  currentUser = JSON.parse(stored);
+  if(currentUser.username !== "admin1") {
     alert("Access Denied ❌ Only Admin can access this page");
-    window.location.href = "Dashboard.html";
+    window.location.href="Dashboard.html";
   }
 }
 
-// Add Balance
-function addBalance(){
+// Add balance
+async function addBalance(){
   const uname = document.getElementById("username").value.trim();
   const amount = parseFloat(document.getElementById("amount").value);
   const statusEl = document.getElementById("status");
-
-  if(!uname || isNaN(amount) || amount <=0){
+  if(!uname || isNaN(amount) || amount <= 0){ 
     statusEl.textContent="Please enter valid username and amount!";
+    statusEl.style.color="red"; 
+    return; 
+  }
+
+  const { data:user, error } = await supabase.from('users').select('*').eq('username', uname).single();
+  if(error || !user){
+    statusEl.textContent="User not found!";
     statusEl.style.color="red";
     return;
   }
 
-  const user = users.find(u=>u.username===uname);
-  if(!user){ statusEl.textContent="User not found!"; statusEl.style.color="red"; return; }
+  // Update balance
+  const newBalance = parseFloat(user.balance) + amount;
+  await supabase.from('users').update({balance:newBalance}).eq('username', uname);
 
-  user.balance += amount;
-  if(!user.history) user.history=[];
-  user.history.push({type:"Deposit", amount:amount, status:"Successful", date:new Date().toLocaleString()});
-  saveUsers();
+  // Add transaction
+  await supabase.from('transactions').insert({
+    username: uname,
+    type: "Deposit",
+    amount: amount,
+    status: "Successful",
+    date: new Date().toISOString()
+  });
+
   statusEl.textContent=`$${amount.toFixed(2)} added to ${uname}'s account ✅`;
   statusEl.style.color="green";
   document.getElementById("username").value="";
   document.getElementById("amount").value="";
 }
 
-// Create User
-function adminCreateUser(){
+// Create user
+async function createUser(){
   const uname = document.getElementById("newUsername").value.trim();
-  if(users.find(u=>u.username===uname)){ alert("Username exists!"); return; }
+  const pwd = document.getElementById("newPassword").value;
+  const name = document.getElementById("newName").value;
+  const acct = document.getElementById("newAcct").value;
+  const balance = parseFloat(document.getElementById("newBalance").value);
+  const photo = document.getElementById("newPhoto").value;
+  const statusEl = document.getElementById("status");
 
-  const newUser = {
+  if(!uname || !pwd || !name || !acct || isNaN(balance)){ 
+    statusEl.textContent="Please fill all fields correctly!";
+    statusEl.style.color="red"; 
+    return;
+  }
+
+  // Check if user exists
+  const { data:exists } = await supabase.from('users').select('username').eq('username', uname);
+  if(exists.length > 0){ 
+    statusEl.textContent="Username already exists!"; 
+    statusEl.style.color="red"; 
+    return;
+  }
+
+  await supabase.from('users').insert({
     username: uname,
-    password: document.getElementById("newPassword").value,
-    name: document.getElementById("newName").value,
-    acct: document.getElementById("newAcct").value,
-    balance: Number(document.getElementById("newBalance").value),
-    photo: document.getElementById("newPhoto").value,
-    history:[
-      {type:"Deposit", amount:Number(document.getElementById("newBalance").value), status:"Successful", date:new Date().toLocaleString()},
-      {type:"Withdrawal", amount:5000, status:"Successful", date:new Date().toLocaleString()}
-    ]
-  };
+    password: pwd,
+    name: name,
+    acct: acct,
+    balance: balance,
+    photo: photo
+  });
 
-  users.push(newUser);
-  saveUsers();
-  alert("User created ✅");
+  await supabase.from('transactions').insert({
+    username: uname,
+    type:"Deposit",
+    amount: balance,
+    status:"Successful",
+    date: new Date().toISOString()
+  });
+
+  statusEl.textContent="User created ✅";
+  statusEl.style.color="green";
+
   document.getElementById("newUsername").value="";
   document.getElementById("newPassword").value="";
   document.getElementById("newName").value="";
@@ -140,23 +170,22 @@ function adminCreateUser(){
   document.getElementById("newBalance").value="";
 }
 
-// Delete User
-function deleteUser(){
+// Delete user
+async function deleteUser(){
   const uname = document.getElementById("delUsername").value.trim();
-  if(!uname){ document.getElementById("status").textContent="Enter username!"; document.getElementById("status").style.color="red"; return; }
-  if(uname==="admin1"){ document.getElementById("status").textContent="Cannot delete Admin!"; document.getElementById("status").style.color="red"; return; }
-  const idx = users.findIndex(u=>u.username===uname);
-  if(idx!==-1){
-    if(confirm("Delete this user?")){
-      users.splice(idx,1);
-      saveUsers();
-      document.getElementById("status").textContent=`User ${uname} deleted ✅`;
-      document.getElementById("status").style.color="green";
-      document.getElementById("delUsername").value="";
-    }
-  } else {
-    document.getElementById("status").textContent="User not found!";
-    document.getElementById("status").style.color="red";
+  const statusEl = document.getElementById("status");
+  if(!uname){ statusEl.textContent="Enter username!"; statusEl.style.color="red"; return; }
+  if(uname === "admin1"){ statusEl.textContent="Cannot delete Admin!"; statusEl.style.color="red"; return; }
+
+  const { data:user } = await supabase.from('users').select('*').eq('username', uname).single();
+  if(!user){ statusEl.textContent="User not found!"; statusEl.style.color="red"; return; }
+
+  if(confirm(`Delete user ${uname}?`)){
+    await supabase.from('users').delete().eq('username', uname);
+    await supabase.from('transactions').delete().eq('username', uname);
+    statusEl.textContent=`User ${uname} deleted ✅`;
+    statusEl.style.color="green";
+    document.getElementById("delUsername").value="";
   }
 }
 
