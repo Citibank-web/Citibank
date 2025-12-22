@@ -7,46 +7,42 @@
 <style>
   body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; flex-direction:column; min-height:100vh; }
   
-  /* Topbar */
-  .topbar { background:#003366; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
-  .topbar h2 { margin:0; font-size:22px; }
-
   /* Main content */
-  .content { flex:1; padding:20px; max-width:1000px; margin:0 auto; width:100%; }
+  .content { flex:1; padding:20px; max-width:1000px; margin:0 auto; }
 
-  .card { background:white; border-radius:12px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,.05); display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
-  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; object-fit:cover; }
-  .info { display:flex; flex-direction:column; gap:8px; flex:1; }
-  .info h3 { margin:0; color:#003366; font-size:24px; }
-  .info p { margin:0; font-size:16px; color:#555; }
-
-  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
-  .btn { padding:12px 20px; border:none; border-radius:8px; font-size:16px; cursor:pointer; font-weight:600; color:white; transition:0.2s; }
-  .btn-transfer { background:linear-gradient(45deg,#0066cc,#3399ff); }
-  .btn-withdraw { background:linear-gradient(45deg,#cc3300,#ff6666); }
+  /* Profile card */
+  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; flex-wrap:wrap; justify-content:center; }
+  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin:10px; object-fit:cover; }
+  .info { display:flex; flex-direction:column; margin:10px; text-align:center; }
+  .info h3 { margin:0; font-size:24px; color:#003366; }
+  .info p { margin:4px 0; font-size:16px; color:#555; }
+  .actions { display:flex; gap:15px; margin-top:10px; justify-content:center; flex-wrap:wrap; }
+  .btn { padding:12px 20px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
+  .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
+  .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
   .btn:hover { opacity:0.9; }
 
-  /* Footer Menu */
-  .footer-menu { display:flex; justify-content:space-around; background:white; padding:10px 0; box-shadow:0 -2px 8px rgba(0,0,0,0.1); position:fixed; bottom:0; width:100%; z-index:1000; }
-  .footer-menu button { background:none; border:none; display:flex; flex-direction:column; align-items:center; font-size:14px; color:#003366; cursor:pointer; transition:0.2s; }
-  .footer-menu button:hover { color:#3399ff; }
-  .footer-menu span { font-size:18px; }
+  /* Footer menu */
+  .footer { display:flex; justify-content:space-around; align-items:center; background:#003366; color:white; padding:10px 0; position:fixed; bottom:0; width:100%; }
+  .footer button { background:none; border:none; color:white; font-size:16px; cursor:pointer; display:flex; flex-direction:column; align-items:center; }
+  .footer button span { font-size:20px; margin-bottom:4px; }
+  .footer button:hover { color:#00ccff; }
+
+  @media(max-width:768px){
+    .card { flex-direction:column; text-align:center; }
+    .actions { flex-direction:column; }
+  }
 </style>
 </head>
 <body>
-
-<div class="topbar">
-  <h2>Dashboard</h2>
-  <button id="logoutBtn" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
-</div>
 
 <div class="content">
   <div class="card">
     <img id="profilePic" class="profile-pic" src="">
     <div class="info">
-      <h3 id="fullName"></h3>
-      <p>Account Number: <span id="accountNumber"></span></p>
-      <p>Balance: $<span id="balance"></span></p>
+      <h3 id="fullName">Loading...</h3>
+      <p>Account Number: <span id="accountNumber">--</span></p>
+      <p>Balance: $<span id="balance">0.00</span></p>
       <div class="actions">
         <button class="btn btn-transfer" onclick="alert('Account Locked 🔐')">Transfer</button>
         <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐')">Withdraw</button>
@@ -55,25 +51,28 @@
   </div>
 </div>
 
-<div class="footer-menu">
-  <button id="menuDashboard"><span>🏠</span>Dashboard</button>
-  <button id="menuKYC"><span>🖊️</span>KYC</button>
-  <button id="menuHistory"><span>📜</span>History</button>
-  <button id="menuAdmin"><span>⚙️</span>Admin</button>
+<!-- Footer navigation -->
+<div class="footer">
+  <button onclick="goTo('Dashboard.html')"><span>🏠</span>Dashboard</button>
+  <button onclick="goTo('kyc.html')"><span>📝</span>KYC</button>
+  <button onclick="goTo('history.html')"><span>📜</span>History</button>
+  <button onclick="goTo('admin.html')"><span>🛠️</span>Admin</button>
+  <button id="logoutBtn"><span>🚪</span>Logout</button>
 </div>
 
 <script type="module">
 import { supabase } from './supabase.js';
 
-async function loadDashboard() {
-  // Get current user
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if(authError || !user) {
-    location.href = "index.html";
-    return;
-  }
+let currentUser;
 
-  // Fetch user profile
+async function loadDashboard() {
+  // Get current authenticated user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if(authError || !user) location.href = "index.html";
+
+  currentUser = user;
+
+  // Fetch user profile from Supabase
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -85,7 +84,7 @@ async function loadDashboard() {
     return;
   }
 
-  // Render user data
+  // Render dashboard
   document.getElementById("fullName").innerText = data.full_name;
   document.getElementById("accountNumber").innerText = data.account_number;
   document.getElementById("balance").innerText = data.balance.toFixed(2);
@@ -93,10 +92,9 @@ async function loadDashboard() {
 }
 
 // Footer navigation
-document.getElementById("menuDashboard").addEventListener("click", ()=>location.href="Dashboard.html");
-document.getElementById("menuKYC").addEventListener("click", ()=>location.href="kyc.html");
-document.getElementById("menuHistory").addEventListener("click", ()=>location.href="history.html");
-document.getElementById("menuAdmin").addEventListener("click", ()=>location.href="admin.html");
+function goTo(page) {
+  window.location.href = page;
+}
 
 // Logout
 document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -104,7 +102,6 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   location.href = "index.html";
 });
 
-// Load dashboard
 loadDashboard();
 </script>
 
