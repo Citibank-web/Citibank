@@ -4,85 +4,67 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Citibank Login</title>
+
 <style>
-  body { font-family: Arial, sans-serif; background:#f4f6f8; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-  .login-card { background:white; padding:40px; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.1); width:100%; max-width:400px; }
-  h2 { text-align:center; color:#003366; margin-bottom:20px; }
-  input { width:100%; padding:12px; margin:10px 0; border:1px solid #ccc; border-radius:5px; font-size:16px; }
-  button { width:100%; padding:12px; margin-top:15px; border:none; border-radius:5px; background:#003366; color:white; font-size:16px; cursor:pointer; transition:0.2s; }
+  body { font-family: Arial; background:#f2f2f2; display:flex; justify-content:center; align-items:center; height:100vh; }
+  .login-box { background:#fff; padding:40px; border-radius:10px; box-shadow:0 5px 20px rgba(0,0,0,0.1); width:320px; }
+  .login-box h2 { text-align:center; margin-bottom:20px; color:#003366; }
+  input, button { width:100%; padding:12px; margin:10px 0; border-radius:5px; border:1px solid #ccc; font-size:16px; }
+  button { background:#003366; color:#fff; border:none; cursor:pointer; }
   button:hover { background:#0055a5; }
-  #status { text-align:center; margin-top:10px; font-weight:600; }
+  #status { color:red; font-size:14px; text-align:center; }
 </style>
 </head>
+
 <body>
 
-<div class="login-card">
+<div class="login-box">
   <h2>Citibank Login</h2>
-  <input type="email" id="email" placeholder="Email">
+  <input type="text" id="username" placeholder="Username">
   <input type="password" id="password" placeholder="Password">
-  <button onclick="login()">Login</button>
+  <button id="btnLogin">Login</button>
   <p id="status"></p>
 </div>
 
+<!-- SUPABASE LOGIN LOGIC -->
 <script type="module">
-import { supabase } from './supabase.js';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-async function login() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
+const supabase = createClient(
+  "https://aaljhxyrqnewvhejtoik.supabase.co",
+  "sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz"
+);
 
-  const statusEl = document.getElementById('status');
+const btnLogin = document.getElementById("btnLogin");
+const status = document.getElementById("status");
 
-  if(!email || !password) {
-    statusEl.textContent = "Enter email and password!";
-    statusEl.style.color = "red";
+btnLogin.addEventListener("click", async () => {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!username || !password) {
+    status.textContent = "Please fill all fields!";
     return;
   }
 
-  // Sign in via Supabase Auth
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  status.textContent = "Logging in...";
 
-  if(error){
-    statusEl.textContent = error.message;
-    statusEl.style.color = "red";
+  // Convert username → email (your design choice)
+  const email = `${username}@citibank.local`;
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    status.textContent = "Login failed ❌ Check username or password";
     return;
   }
 
-  // Fetch user profile from `users` table
-  const { data: userProfile, error: profileErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', data.user.id)
-    .single();
-
-  if(profileErr){
-    statusEl.textContent = "Failed to fetch user profile!";
-    statusEl.style.color = "red";
-    return;
-  }
-
-  // Store profile in session storage for Dashboard
-  sessionStorage.setItem("currentUser", JSON.stringify(userProfile));
-
-  // Redirect to Dashboard
+  // Successful login
   window.location.href = "Dashboard.html";
-}
-
-// Optional: check if user already logged in
-(async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if(session){
-    const { data: userProfile } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-    if(userProfile) {
-      sessionStorage.setItem("currentUser", JSON.stringify(userProfile));
-      window.location.href = "Dashboard.html";
-    }
-  }
-})();
+});
 </script>
 
 </body>
