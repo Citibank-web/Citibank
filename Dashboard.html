@@ -5,98 +5,98 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; display:flex; flex-direction:column; min-height:100vh; }
+  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; flex-direction:column; min-height:100vh; }
   
   /* Topbar */
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar h2 { margin:0; font-size:24px; }
+  .topbar { background:#003366; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
+  .topbar h2 { margin:0; font-size:22px; }
 
-  /* Content */
-  .content { flex:1; padding:20px; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-  
-  .card { background:white; border-radius:12px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); text-align:center; max-width:400px; width:100%; }
-  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; object-fit:cover; margin-bottom:15px; }
-  .info h3 { margin:0; color:#003366; font-size:22px; }
-  .info p { margin:5px 0; font-size:16px; color:#555; }
-  .actions { display:flex; justify-content:space-around; margin-top:15px; }
-  .btn { padding:10px 20px; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:0.2s; }
-  .btn-transfer { background:linear-gradient(45deg,#0066cc,#3399ff); color:white; }
-  .btn-withdraw { background:linear-gradient(45deg,#cc3300,#ff6666); color:white; }
+  /* Main content */
+  .content { flex:1; padding:20px; max-width:1000px; margin:0 auto; width:100%; }
+
+  .card { background:white; border-radius:12px; padding:20px; box-shadow:0 8px 20px rgba(0,0,0,.05); display:flex; align-items:center; flex-wrap:wrap; gap:20px; }
+  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; object-fit:cover; }
+  .info { display:flex; flex-direction:column; gap:8px; flex:1; }
+  .info h3 { margin:0; color:#003366; font-size:24px; }
+  .info p { margin:0; font-size:16px; color:#555; }
+
+  .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .btn { padding:12px 20px; border:none; border-radius:8px; font-size:16px; cursor:pointer; font-weight:600; color:white; transition:0.2s; }
+  .btn-transfer { background:linear-gradient(45deg,#0066cc,#3399ff); }
+  .btn-withdraw { background:linear-gradient(45deg,#cc3300,#ff6666); }
   .btn:hover { opacity:0.9; }
 
-  /* Footer menu */
-  .footer-menu { display:flex; justify-content:space-around; align-items:center; padding:10px 0; background:#003366; color:white; }
-  .footer-menu button { background:none; border:none; color:white; font-size:14px; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
-  .footer-menu button span { font-size:12px; margin-top:3px; }
-  .footer-menu button:hover { opacity:0.8; }
-
-  @media(max-width:500px){
-    .card { max-width:90%; }
-    .actions { flex-direction:column; gap:10px; }
-  }
+  /* Footer Menu */
+  .footer-menu { display:flex; justify-content:space-around; background:white; padding:10px 0; box-shadow:0 -2px 8px rgba(0,0,0,0.1); position:fixed; bottom:0; width:100%; z-index:1000; }
+  .footer-menu button { background:none; border:none; display:flex; flex-direction:column; align-items:center; font-size:14px; color:#003366; cursor:pointer; transition:0.2s; }
+  .footer-menu button:hover { color:#3399ff; }
+  .footer-menu span { font-size:18px; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <h2>Dashboard</h2>
-  <button id="logoutBtn" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px;">Logout</button>
+  <button id="logoutBtn" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
 </div>
 
 <div class="content">
   <div class="card">
     <img id="profilePic" class="profile-pic" src="">
     <div class="info">
-      <h3 id="fullName">Full Name</h3>
-      <p>Account No: <span id="accountNumber">000000</span></p>
-      <p>Balance: $<span id="balance">0.00</span></p>
-    </div>
-    <div class="actions">
-      <button class="btn btn-transfer" onclick="alert('Account Locked 🔐')">Transfer</button>
-      <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐')">Withdraw</button>
+      <h3 id="fullName"></h3>
+      <p>Account Number: <span id="accountNumber"></span></p>
+      <p>Balance: $<span id="balance"></span></p>
+      <div class="actions">
+        <button class="btn btn-transfer" onclick="alert('Account Locked 🔐')">Transfer</button>
+        <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐')">Withdraw</button>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="footer-menu">
-  <button id="menuDashboard">🏠<span>Dashboard</span></button>
-  <button id="menuKYC">🖊️<span>KYC</span></button>
-  <button id="menuHistory">📜<span>History</span></button>
-  <button id="menuAdmin">⚙️<span>Admin</span></button>
+  <button id="menuDashboard"><span>🏠</span>Dashboard</button>
+  <button id="menuKYC"><span>🖊️</span>KYC</button>
+  <button id="menuHistory"><span>📜</span>History</button>
+  <button id="menuAdmin"><span>⚙️</span>Admin</button>
 </div>
 
 <script type="module">
-import { supabase } from "./supabase.js";
+import { supabase } from './supabase.js';
 
 async function loadDashboard() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if(!user) {
+  // Get current user
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if(authError || !user) {
     location.href = "index.html";
     return;
   }
 
+  // Fetch user profile
   const { data, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", user.id)
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
     .single();
 
   if(error || !data) {
-    console.error("Error fetching user data:", error);
+    alert("User data not found!");
     return;
   }
 
-  document.getElementById("profilePic").src = data.photo;
+  // Render user data
   document.getElementById("fullName").innerText = data.full_name;
   document.getElementById("accountNumber").innerText = data.account_number;
   document.getElementById("balance").innerText = data.balance.toFixed(2);
+  document.getElementById("profilePic").src = data.photo;
 }
 
-// Footer menu navigation
-document.getElementById("menuDashboard").addEventListener("click", () => location.href="Dashboard.html");
-document.getElementById("menuKYC").addEventListener("click", () => location.href="kyc.html");
-document.getElementById("menuHistory").addEventListener("click", () => location.href="history.html");
-document.getElementById("menuAdmin").addEventListener("click", () => location.href="admin.html");
+// Footer navigation
+document.getElementById("menuDashboard").addEventListener("click", ()=>location.href="Dashboard.html");
+document.getElementById("menuKYC").addEventListener("click", ()=>location.href="kyc.html");
+document.getElementById("menuHistory").addEventListener("click", ()=>location.href="history.html");
+document.getElementById("menuAdmin").addEventListener("click", ()=>location.href="admin.html");
 
 // Logout
 document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -104,7 +104,9 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
   location.href = "index.html";
 });
 
+// Load dashboard
 loadDashboard();
 </script>
+
 </body>
 </html>
