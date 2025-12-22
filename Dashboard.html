@@ -5,26 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial; margin:0; background:#f2f2f2; }
+  body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
+  
+  /* Topbar */
   .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar span { font-size:24px; cursor:pointer; margin-right:10px; }
-  .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:9999; }
+  .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
+  .topbar h2 { margin:0; }
+
+  /* Sidebar */
+  .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
   .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
   .sidebar a:hover { background:#f0f0f0; }
+
+  /* Main content */
   .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
-  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-bottom:15px; object-fit:cover; }
-  button { padding:10px 20px; margin:5px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
-  button:hover { background:#0055a5; }
+
+  /* Profile card */
+  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
+  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
+  .info { display:flex; flex-direction:column; }
+  .info h3 { margin:0; font-size:24px; color:#003366; }
+  .info p { margin:4px 0; font-size:16px; color:#555; }
+
+  /* Buttons */
+  .actions { display:flex; gap:15px; margin-top:10px; }
+  .btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
+  .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
+  .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
+  .btn:hover { opacity:0.9; }
+
+  @media(max-width:768px){
+    .content { margin-left:10px; padding:10px; }
+    .card { flex-direction:column; align-items:center; text-align:center; }
+    .profile-pic { margin-bottom:15px; margin-right:0; }
+    .actions { flex-direction:column; }
+  }
 </style>
-<!-- Supabase JS -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body onload="initDashboard()">
+<body onload="loadDashboard()">
 
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
-  <button onclick="logout()">Logout</button>
+  <button onclick="logout()" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -35,69 +58,55 @@
 </div>
 
 <div class="content">
-  <img id="photo" class="profile-pic" src="">
-  <h2 id="name"></h2>
-  <p>Account No: <span id="acct"></span></p>
-  <h3>Balance: $<span id="balance"></span></h3>
-  <button onclick="locked()">Transfer</button>
-  <button onclick="locked()">Withdraw</button>
+  <div class="card">
+    <img id="profilePic" class="profile-pic" src="">
+    <div class="info">
+      <h3 id="fullName"></h3>
+      <p>Account Number: <span id="accountNumber"></span></p>
+      <p>Balance: $<span id="balance"></span></p>
+      <div class="actions">
+        <button class="btn btn-transfer" onclick="alert('Account Locked, contact Support 🔐')">Transfer</button>
+        <button class="btn btn-withdraw" onclick="alert('Account Locked, contact Support 🔐')">Withdraw</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-  // Initialize Supabase
-  const supabaseUrl = 'https://aaljhxyrqnewvhejtoik.supabase.co';
-  const supabaseKey = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
-  const supabase = Supabase.createClient(supabaseUrl, supabaseKey);
+<script type="module">
+import { supabase } from "./supabase.js";
 
-  let currentUser = null;
+const { data:{user} } = await supabase.auth.getUser();
+if(!user) location.href="index.html";
 
-  async function initDashboard() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if(error || !user){
-      window.location.href = "index.html";
-      return;
-    }
+const { data } = await supabase
+  .from("users")
+  .select("*")
+  .eq("id", user.id)
+  .single();
 
-    // Fetch user profile from Supabase
-    const { data, error: profileError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
+document.getElementById("balance").innerText =
+  "$" + data.balance.toFixed(2);
 
-    if(profileError || !data){
-      alert("Error fetching user data");
-      return;
-    }
+document.getElementById("fullname").innerText =
+  data.full_name;
 
-    currentUser = data;
-    renderDashboard();
-  }
+document.getElementById("account").innerText =
+  data.account_number;
+</script>
 
-  function renderDashboard() {
-    document.getElementById("name").textContent = currentUser.name;
-    document.getElementById("acct").textContent = currentUser.acct;
-    document.getElementById("balance").textContent = Number(currentUser.balance).toLocaleString();
-    document.getElementById("photo").src = currentUser.photo || "https://via.placeholder.com/120";
-  }
+// Sidebar toggle
+function toggleMenu() {
+  const s = document.getElementById("sidebar");
+  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
+}
 
-  function locked() {
-    alert("Account Restricted 🔐\nContact Support");
-  }
+function logout() {
+  localStorage.removeItem("currentUser");
+  window.location.href="index.html";
+}
 
-  function toggleMenu() {
-    const s = document.getElementById("sidebar");
-    s.style.left = s.style.left === "0px" ? "-220px" : "0px";
-  }
-
-  async function logout() {
-    const { error } = await supabase.auth.signOut();
-    if(error){
-      alert("Logout failed");
-      return;
-    }
-    window.location.href = "index.html";
-  }
+// Live update if KYC changes
+window.addEventListener('storage', loadDashboard);
 </script>
 
 </body>
