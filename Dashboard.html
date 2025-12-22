@@ -4,52 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
-
 <style>
   body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
 
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
+  /* Topbar */
+  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; position:fixed; width:100%; top:0; z-index:1001; }
   .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
-  .topbar h2 { margin:0; }
+  .topbar h2 { margin:0; flex:1; text-align:center; }
 
+  /* Sidebar */
   .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
   .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
   .sidebar a:hover { background:#f0f0f0; }
 
-  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
+  /* Main content */
+  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:80px; }
 
+  /* Profile card */
   .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
   .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
-
+  .info { display:flex; flex-direction:column; }
   .info h3 { margin:0; font-size:24px; color:#003366; }
   .info p { margin:4px 0; font-size:16px; color:#555; }
 
+  /* Buttons */
   .actions { display:flex; gap:15px; margin-top:10px; }
   .btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
   .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
   .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
+  .btn:hover { opacity:0.9; }
 
   @media(max-width:768px){
-    .card { flex-direction:column; text-align:center; }
-    .profile-pic { margin-bottom:15px; }
+    .content { margin-left:10px; padding:10px; }
+    .card { flex-direction:column; align-items:center; text-align:center; }
+    .profile-pic { margin-bottom:15px; margin-right:0; }
     .actions { flex-direction:column; }
   }
 </style>
 </head>
-
-<body>
+<body onload="loadDashboard()">
 
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
-  <button onclick="logout()" style="background:#ff4d4f;color:white;border:none;border-radius:8px;padding:8px 15px;cursor:pointer;">Logout</button>
+  <button onclick="logout()" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
 </div>
 
 <div class="sidebar" id="sidebar">
   <a href="Dashboard.html">Dashboard</a>
   <a href="kyc.html">KYC</a>
   <a href="history.html">Transaction History</a>
-  <a href="admin.html" id="adminLink" style="display:none;">Admin Panel</a>
+  <a href="admin.html" id="adminLink">Admin Panel</a>
 </div>
 
 <div class="content">
@@ -67,62 +72,39 @@
   </div>
 </div>
 
-<!-- SUPABASE DASHBOARD LOGIC -->
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<script>
+let currentUser;
 
-const supabase = createClient(
-  "https://aaljhxyrqnewvhejtoik.supabase.co",
-  "sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz"
-);
+function loadDashboard(){
+  const u = JSON.parse(localStorage.getItem("currentUser"));
+  if(!u){ window.location.href="index.html"; return; }
+  currentUser = u;
 
-// Load dashboard
-const { data:{ user } } = await supabase.auth.getUser();
-if(!user){
-  window.location.href = "index.html";
-}
+  document.getElementById("profilePic").src = currentUser.photo || "https://via.placeholder.com/120";
+  document.getElementById("fullName").textContent = currentUser.name || currentUser.username;
+  document.getElementById("accountNumber").textContent = currentUser.acct || "1000000001";
+  document.getElementById("balance").textContent = currentUser.balance?.toFixed(2) || "0.00";
 
-// Fetch profile
-const { data:profile, error } = await supabase
-  .from("users")
-  .select("*")
-  .eq("id", user.id)
-  .single();
-
-if(error){
-  alert("Profile load failed");
-  console.error(error);
-}
-
-// Populate UI
-document.getElementById("profilePic").src =
-  profile.photo || "https://via.placeholder.com/120";
-
-document.getElementById("fullName").textContent =
-  profile.full_name;
-
-document.getElementById("accountNumber").textContent =
-  profile.account_number;
-
-document.getElementById("balance").textContent =
-  Number(profile.balance).toFixed(2);
-
-// Show admin menu if admin
-if(profile.role === "admin"){
-  document.getElementById("adminLink").style.display = "block";
+  // Show admin link only if admin
+  if(currentUser.username !== "admin1"){
+    document.getElementById("adminLink").style.display = "none";
+  }
 }
 
 // Sidebar toggle
-window.toggleMenu = () => {
+function toggleMenu() {
   const s = document.getElementById("sidebar");
-  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
-};
+  s.style.left = (s.style.left === "0px") ? "-220px" : "0px";
+}
 
 // Logout
-window.logout = async () => {
-  await supabase.auth.signOut();
-  window.location.href = "index.html";
-};
+function logout() {
+  localStorage.removeItem("currentUser");
+  window.location.href="index.html";
+}
+
+// Auto update if KYC changes
+window.addEventListener('storage', loadDashboard);
 </script>
 
 </body>
