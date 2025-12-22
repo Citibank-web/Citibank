@@ -21,19 +21,31 @@
   .content { margin-left:160px; padding:20px; flex:1; }
 
   /* Admin login form */
-  #adminLogin { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; }
+  #adminLogin { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; width:100%; }
   #adminLogin input { padding:10px; margin:10px 0; width:250px; border-radius:5px; border:1px solid #ccc; }
   #adminLogin button { padding:10px 20px; background:#003366; color:white; border:none; border-radius:5px; cursor:pointer; }
   #adminLogin button:hover { background:#0055a5; }
 
+  /* Card style */
+  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); }
+  .card h2 { margin-top:0; color:#003366; }
+
+  /* Form inside card */
+  .card input { padding:10px; margin:5px 0; width:100%; border-radius:5px; border:1px solid #ccc; }
+  .card button { margin-top:10px; padding:10px 20px; border:none; border-radius:8px; cursor:pointer; color:white; font-weight:600; }
+  .btn-add { background:linear-gradient(45deg,#0066cc,#3399ff); }
+  .btn-save { background:green; }
+  .btn-delete { background:#cc3300; }
+
   /* Table */
-  table { width:100%; border-collapse:collapse; margin-top:20px; }
+  table { width:100%; border-collapse:collapse; margin-top:15px; }
   th, td { padding:12px; border:1px solid #ccc; text-align:left; }
   th { background:#003366; color:white; }
-  button { padding:6px 12px; margin:2px; border:none; border-radius:5px; cursor:pointer; }
-  .btn-edit { background:#3399ff; color:white; }
-  .btn-delete { background:#cc3300; color:white; }
-  .btn-save { background:green; color:white; }
+
+  @media(max-width:768px){
+    .sidebar { width:140px; }
+    .content { margin-left:140px; }
+  }
 </style>
 </head>
 <body>
@@ -53,39 +65,39 @@
   </div>
 
   <div class="content">
-    <h2>Admin Panel - User Management</h2>
+    <div class="card">
+      <h2>Add New User</h2>
+      <input type="text" id="newFullName" placeholder="Full Name">
+      <input type="text" id="newEmail" placeholder="Email">
+      <input type="text" id="newAcct" placeholder="Account Number">
+      <input type="number" id="newBalance" placeholder="Balance">
+      <input type="text" id="newPhoto" placeholder="Profile Photo URL">
+      <button class="btn-add" onclick="addUser()">Add User</button>
+    </div>
 
-    <!-- Add new user -->
-    <h3>Add New User</h3>
-    <input type="text" id="newFullName" placeholder="Full Name">
-    <input type="text" id="newEmail" placeholder="Email">
-    <input type="text" id="newAcct" placeholder="Account Number">
-    <input type="number" id="newBalance" placeholder="Balance">
-    <input type="text" id="newPhoto" placeholder="Profile Photo URL">
-    <button onclick="addUser()">Add User</button>
-
-    <!-- User table -->
-    <h3>Users</h3>
-    <table id="userTable">
-      <thead>
-        <tr>
-          <th>Full Name</th>
-          <th>Email</th>
-          <th>Account No</th>
-          <th>Balance</th>
-          <th>Photo</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="card">
+      <h2>User List</h2>
+      <table id="userTable">
+        <thead>
+          <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Account No</th>
+            <th>Balance</th>
+            <th>Photo</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script type="module">
 import { supabase } from './supabase.js';
 
-const ADMIN_PASSWORD = "SuperSecret123";
+const ADMIN_PASSWORD = "Admin1234!";
 
 async function checkAdminPass() {
   const entered = document.getElementById("adminPass").value;
@@ -103,10 +115,7 @@ async function loadUsers() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if(authError || !user) location.href = "index.html";
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*');
-
+  const { data, error } = await supabase.from('users').select('*');
   if(error) { console.error(error); return; }
 
   const tbody = document.querySelector("#userTable tbody");
@@ -121,7 +130,7 @@ async function loadUsers() {
       <td contenteditable="true">${u.balance}</td>
       <td contenteditable="true">${u.photo}</td>
       <td>
-        <button class="btn-edit" onclick="updateUser('${u.id}', this)">Save</button>
+        <button class="btn-save" onclick="updateUser('${u.id}', this)">Save</button>
         <button class="btn-delete" onclick="deleteUser('${u.id}')">Delete</button>
       </td>
     `;
@@ -137,20 +146,18 @@ async function addUser() {
   const balance = parseFloat(document.getElementById("newBalance").value) || 0;
   const photo = document.getElementById("newPhoto").value;
 
-  // Create auth user
   const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
     email, password: "DefaultPass123"
   });
   if(authError) { alert(authError.message); return; }
 
-  // Add to users table
   const { data, error } = await supabase.from('users').insert([{
     id: authUser.user.id,
     full_name: fullName,
-    email: email,
+    email,
     account_number: acct,
-    balance: balance,
-    photo: photo
+    balance,
+    photo
   }]);
   if(error) { alert(error.message); return; }
   alert("User added successfully!");
