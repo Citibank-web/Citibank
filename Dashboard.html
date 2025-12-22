@@ -6,7 +6,7 @@
 <title>Dashboard - Citibank</title>
 <style>
   body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
-  
+
   /* Topbar */
   .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
   .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
@@ -42,7 +42,7 @@
   }
 </style>
 </head>
-<body onload="loadDashboard()">
+<body>
 
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
@@ -65,48 +65,60 @@
       <p>Account Number: <span id="accountNumber"></span></p>
       <p>Balance: $<span id="balance"></span></p>
       <div class="actions">
-        <button class="btn btn-transfer" onclick="alert('Account Locked, contact Support 🔐')">Transfer</button>
-        <button class="btn btn-withdraw" onclick="alert('Account Locked, contact Support 🔐')">Withdraw</button>
+        <button class="btn btn-transfer" onclick="locked()">Transfer</button>
+        <button class="btn btn-withdraw" onclick="locked()">Withdraw</button>
       </div>
     </div>
   </div>
 </div>
 
 <script type="module">
-import { supabase } from "./supabase.js";
+import { supabase } from './supabase.js';
 
-const { data:{user} } = await supabase.auth.getUser();
-if(!user) location.href="index.html";
+let currentUser = null;
 
-const { data } = await supabase
-  .from("users")
-  .select("*")
-  .eq("id", user.id)
-  .single();
+async function loadDashboard() {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if(userError || !user) {
+    location.href = "index.html";
+    return;
+  }
 
-document.getElementById("balance").innerText =
-  "$" + data.balance.toFixed(2);
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
 
-document.getElementById("fullname").innerText =
-  data.full_name;
+  if(error || !data) {
+    alert("User data not found!");
+    return;
+  }
 
-document.getElementById("account").innerText =
-  data.account_number;
-</script>
+  currentUser = data;
 
-// Sidebar toggle
+  document.getElementById("fullName").innerText = data.name;
+  document.getElementById("accountNumber").innerText = data.acct;
+  document.getElementById("balance").innerText = "$" + Number(data.balance).toLocaleFixed(2);
+  document.getElementById("profilePic").src = data.photo || "https://via.placeholder.com/120";
+}
+
+function locked() {
+  alert("Account Locked 🔐\nContact Support");
+}
+
 function toggleMenu() {
   const s = document.getElementById("sidebar");
   s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
-function logout() {
-  localStorage.removeItem("currentUser");
-  window.location.href="index.html";
+async function logout() {
+  await supabase.auth.signOut();
+  location.href = "index.html";
 }
 
-// Live update if KYC changes
-window.addEventListener('storage', loadDashboard);
+// Load dashboard on page load
+loadDashboard();
 </script>
 
 </body>
