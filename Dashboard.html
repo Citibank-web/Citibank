@@ -5,13 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; flex-direction:column; min-height:100vh; }
+  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; }
   
-  /* Main content */
-  .content { flex:1; padding:20px; max-width:1000px; margin:0 auto; }
+  /* Sidebar */
+  .sidebar {
+    width:220px; background:#003366; color:white; position:fixed; top:0; left:0; height:100%; padding-top:60px;
+    transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000;
+  }
+  .sidebar a {
+    display:block; padding:15px; color:white; text-decoration:none; font-weight:500;
+  }
+  .sidebar a:hover { background:#0055a5; }
+
+  /* Content */
+  .content { margin-left:220px; padding:20px; flex:1; }
+
+  /* Topbar */
+  .topbar {
+    position:fixed; top:0; left:220px; right:0; height:60px; background:#003366; color:white;
+    display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:900;
+  }
+  .topbar h2 { margin:0; }
 
   /* Profile card */
-  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; flex-wrap:wrap; justify-content:center; }
+  .card { background:white; border-radius:12px; padding:20px; margin-top:80px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; flex-wrap:wrap; justify-content:center; }
   .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin:10px; object-fit:cover; }
   .info { display:flex; flex-direction:column; margin:10px; text-align:center; }
   .info h3 { margin:0; font-size:24px; color:#003366; }
@@ -22,19 +39,26 @@
   .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
   .btn:hover { opacity:0.9; }
 
-  /* Footer menu */
-  .footer { display:flex; justify-content:space-around; align-items:center; background:#003366; color:white; padding:10px 0; position:fixed; bottom:0; width:100%; }
-  .footer button { background:none; border:none; color:white; font-size:16px; cursor:pointer; display:flex; flex-direction:column; align-items:center; }
-  .footer button span { font-size:20px; margin-bottom:4px; }
-  .footer button:hover { color:#00ccff; }
-
   @media(max-width:768px){
-    .card { flex-direction:column; text-align:center; }
-    .actions { flex-direction:column; }
+    .sidebar { width:0; overflow:hidden; }
+    .topbar { left:0; }
+    .content { margin-left:0; }
   }
 </style>
 </head>
 <body>
+
+<div class="sidebar" id="sidebar">
+  <a href="Dashboard.html">🏠 Dashboard</a>
+  <a href="kyc.html">📝 KYC</a>
+  <a href="history.html">📜 Transaction History</a>
+  <a href="admin.html">🛠️ Admin Panel</a>
+  <a href="#" id="logoutLink">🚪 Logout</a>
+</div>
+
+<div class="topbar">
+  <h2>Dashboard</h2>
+</div>
 
 <div class="content">
   <div class="card">
@@ -51,28 +75,14 @@
   </div>
 </div>
 
-<!-- Footer navigation -->
-<div class="footer">
-  <button onclick="goTo('Dashboard.html')"><span>🏠</span>Dashboard</button>
-  <button onclick="goTo('kyc.html')"><span>📝</span>KYC</button>
-  <button onclick="goTo('history.html')"><span>📜</span>History</button>
-  <button onclick="goTo('admin.html')"><span>🛠️</span>Admin</button>
-  <button id="logoutBtn"><span>🚪</span>Logout</button>
-</div>
-
 <script type="module">
 import { supabase } from './supabase.js';
 
-let currentUser;
-
 async function loadDashboard() {
-  // Get current authenticated user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if(authError || !user) location.href = "index.html";
 
-  currentUser = user;
-
-  // Fetch user profile from Supabase
+  // Fetch user profile
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -84,24 +94,20 @@ async function loadDashboard() {
     return;
   }
 
-  // Render dashboard
+  // Render profile
   document.getElementById("fullName").innerText = data.full_name;
   document.getElementById("accountNumber").innerText = data.account_number;
   document.getElementById("balance").innerText = data.balance.toFixed(2);
   document.getElementById("profilePic").src = data.photo;
 }
 
-// Footer navigation
-function goTo(page) {
-  window.location.href = page;
-}
-
 // Logout
-document.getElementById("logoutBtn").addEventListener("click", async () => {
+document.getElementById("logoutLink").addEventListener("click", async () => {
   await supabase.auth.signOut();
   location.href = "index.html";
 });
 
+// Initialize
 loadDashboard();
 </script>
 
