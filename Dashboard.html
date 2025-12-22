@@ -5,50 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-body { font-family: Arial,sans-serif; margin:0; background:#f4f6f8; }
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding-bottom: 70px; /* Reserve space for footer */
+  background: #f4f6f8;
+}
+
 /* Topbar */
-.topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
-.topbar h2 { margin:0; }
-.topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
-/* Sidebar */
-.sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
-.sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
-.sidebar a:hover { background:#f0f0f0; }
-/* Content */
-.content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
-/* Profile card */
-.card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
-.profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
-.info { display:flex; flex-direction:column; }
-.info h3 { margin:0; font-size:24px; color:#003366; }
-.info p { margin:4px 0; font-size:16px; color:#555; }
-.actions { display:flex; gap:15px; margin-top:10px; }
-.btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
-.btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
-.btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
-.btn:hover { opacity:0.9; }
+.topbar {
+  background: #003366;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Main Content */
+.content {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+}
+
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #003366;
+  margin-right: 20px;
+  object-fit: cover;
+}
+
+.info { display: flex; flex-direction: column; }
+.info h3 { margin: 0; font-size: 24px; color: #003366; }
+.info p { margin: 4px 0; font-size: 16px; color: #555; }
+.actions { display: flex; gap: 15px; margin-top: 10px; }
+.btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: 0.2s; font-weight: 600; }
+.btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color: white; }
+.btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color: white; }
+.btn:hover { opacity: 0.9; }
+
+/* Footer Menu */
+.footer-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #003366;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+  box-shadow: 0 -5px 10px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+.footer-menu button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.footer-menu button:hover {
+  color: #ffcc00;
+}
+
+.footer-menu button span {
+  margin-top: 5px;
+}
+
+/* Responsive */
 @media(max-width:768px){
-  .content { margin-left:10px; padding:10px; }
-  .card { flex-direction:column; align-items:center; text-align:center; }
-  .profile-pic { margin-bottom:15px; margin-right:0; }
-  .actions { flex-direction:column; }
+  .card { flex-direction: column; align-items: center; text-align: center; }
+  .profile-pic { margin-bottom: 15px; margin-right: 0; }
+  .actions { flex-direction: column; }
 }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <span onclick="toggleMenu()">☰</span>
-  <h2>Dashboard</h2>
-  <button onclick="logout()">Logout</button>
-</div>
-
-<div class="sidebar" id="sidebar">
-  <a href="Dashboard.html">Dashboard</a>
-  <a href="kyc.html">KYC</a>
-  <a href="history.html">Transaction History</a>
-  <a href="admin.html">Admin Panel</a>
-</div>
+<div class="topbar">Dashboard</div>
 
 <div class="content">
   <div class="card">
@@ -65,6 +119,30 @@ body { font-family: Arial,sans-serif; margin:0; background:#f4f6f8; }
   </div>
 </div>
 
+<!-- Footer Menu -->
+<div class="footer-menu">
+  <button onclick="goDashboard()">
+    🏠
+    <span>Dashboard</span>
+  </button>
+  <button onclick="goKYC()">
+    🖊️
+    <span>KYC</span>
+  </button>
+  <button onclick="goHistory()">
+    📜
+    <span>History</span>
+  </button>
+  <button onclick="goAdmin()">
+    ⚙️
+    <span>Admin</span>
+  </button>
+  <button onclick="logout()">
+    🚪
+    <span>Logout</span>
+  </button>
+</div>
+
 <script type="module">
 import { supabase } from './supabase.js';
 
@@ -75,16 +153,8 @@ async function loadDashboard() {
   if(!user) location.href="index.html";
   currentUser = user;
 
-  // Fetch user profile from "users" table
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  if(error) {
-    console.error(error);
-    return;
-  }
+  const { data, error } = await supabase.from('users').select('*').eq('id', user.id).single();
+  if(error) { console.error(error); return; }
 
   document.getElementById("fullName").innerText = data.full_name;
   document.getElementById("accountNumber").innerText = data.account_number;
@@ -92,23 +162,21 @@ async function loadDashboard() {
   document.getElementById("profilePic").src = data.photo;
 }
 
-// Sidebar toggle
-function toggleMenu() {
-  const s = document.getElementById("sidebar");
-  s.style.left = s.style.left === "0px" ? "-220px" : "0px";
-}
+function locked() { alert("Account Restricted 🔐\nContact Support"); }
+
+// Footer menu actions
+function goDashboard(){ window.location.href="Dashboard.html"; }
+function goKYC(){ window.location.href="kyc.html"; }
+function goHistory(){ window.location.href="history.html"; }
+function goAdmin(){ window.location.href="admin.html"; }
 
 function logout() {
   supabase.auth.signOut();
   window.location.href="index.html";
 }
 
-function locked() {
-  alert("Account Restricted 🔐\nContact Support");
-}
-
-// Load dashboard on page load
 loadDashboard();
 </script>
+
 </body>
 </html>
