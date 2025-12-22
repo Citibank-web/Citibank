@@ -76,15 +76,15 @@
   </table>
 </div>
 
-<script type="module">
-import { supabase } from './supabase.js';
+<script>
+  const adminPassword = "Admin1234!";
 
-// Password protection
-const password = prompt("Enter Admin Password:");
-if(password !== "Admin1234!") {
-  alert("Unauthorized 🔐");
-  window.location.href = "index.html";
-}
+  const entered = prompt("Enter Admin Password 🔐");
+
+  if (entered !== adminPassword) {
+    alert("Unauthorized 🔐");
+    window.location.href = "Dashboard.html";
+  }
 
 // Logout
 document.getElementById("logoutLink").addEventListener("click", async () => {
