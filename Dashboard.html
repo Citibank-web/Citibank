@@ -13,7 +13,7 @@
     transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; overflow:auto;
   }
   .sidebar a {
-    display:block; padding:15px; color:white; text-decoration:none; font-weight:500;
+    display:block; padding:15px; color:white; text-decoration:none; font-weight:500; cursor:pointer;
   }
   .sidebar a.active { background:#0055a5; }
   .sidebar a:hover { background:#0055a5; }
@@ -47,6 +47,7 @@
     .topbar { left:0; }
     .content { margin-left:0; }
     .sidebar.show { left:0; }
+    .topbar span { z-index:1001; }
   }
 </style>
 </head>
@@ -57,7 +58,7 @@
   <a href="kyc.html" id="link-kyc">📝 KYC</a>
   <a href="history.html" id="link-history">📜 Transaction History</a>
   <a href="admin.html" id="link-admin">🛠️ Admin Panel</a>
-  <a href="#" id="logoutLink">🚪 Logout</a>
+  <a id="logoutLink">🚪 Logout</a>
 </div>
 
 <div class="topbar">
