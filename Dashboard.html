@@ -112,7 +112,7 @@
   <a href="kyc.html" id="link-kyc">📝<span>KYC</span></a>
   <a href="history.html" id="link-history">📜<span>History</span></a>
   <a href="admin.html" id="link-admin">🛠️<span>Admin</span></a>
-  <a href="#" id="logoutLink">🚪<span>Logout</span></a>
+  <a href="logout.html" id="logoutLink">🚪<span>Logout</span></a>
 </div>
 
 <!-- Main content centered -->
@@ -166,7 +166,7 @@ async function loadDashboard() {
 }
 
 // Logout
-document.getElementById("logoutLink").addEventListener("click", async () => {
+document.getElementById("logout.html").addEventListener("click", async () => {
   await supabase.auth.signOut();
   location.href = "index.html";
 });
