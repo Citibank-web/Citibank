@@ -36,7 +36,7 @@
   <a href="kyc.html" id="link-kyc">📝<span>KYC</span></a>
   <a href="history.html" id="link-history">📜<span>History</span></a>
   <a href="admin.html" id="link-admin">🛠️<span>Admin</span></a>
-  <a href="#" id="logoutLink">🚪<span>Logout</span></a>
+  <a href="index.html" id="logoutLink">🚪<span>Logout</span></a>
 </div>
 
 <div class="content">
@@ -98,5 +98,16 @@ async function loadHistory() {
 loadHistory();
 </script>
 
+  <script>
+function logout() {
+  // Clear all stored user data
+  localStorage.removeItem("currentUser");
+  sessionStorage.clear();
+
+  // Redirect to login page
+  window.location.href = "index.html";
+}
+</script>
+  
 </body>
 </html>
