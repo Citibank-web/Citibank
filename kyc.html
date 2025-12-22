@@ -18,9 +18,12 @@
   button { background:#003366; color:white; border:none; cursor:pointer; }
   button:hover { background:#0055a5; }
   #status { color:red; }
+  #profilePic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; display:block; margin:10px auto; }
 </style>
 </head>
 <body onload="loadKYC()">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
@@ -38,6 +41,7 @@
 <div class="content">
   <h3>Select Your Profile Picture</h3>
   <div id="photoGallery" class="gallery"></div>
+  <img id="profilePic" src="https://via.placeholder.com/120" alt="Profile Picture">
 
   <input type="text" id="fullName" placeholder="Full Name">
   <button id="updateBtn" onclick="updateKYC()">Update Profile</button>
@@ -45,6 +49,10 @@
 </div>
 
 <script>
+const SUPABASE_URL = 'https://aaljhxyrqnewvhejtoik.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser;
 let selectedPhoto = "";
 
@@ -58,29 +66,25 @@ const profileLinks = [
   "https://swiftdelivery8.wordpress.com/wp-content/uploads/2025/12/img-20251210-wa00104739785893116021144.jpg"
 ];
 
-function loadKYC() {
-  const u = JSON.parse(localStorage.getItem("currentUser"));
-  if(!u){ window.location.href="index.html"; return; }
-  currentUser = u;
-  selectedPhoto = u.photo;
-  document.getElementById("fullName").value = u.name;
+async function loadKYC(){
+  const stored = localStorage.getItem("currentUser");
+  if(!stored) return window.location.href="index.html";
+  currentUser = JSON.parse(stored);
+
+  // Fetch latest data from Supabase
+  const { data:user, error } = await supabase.from('users').select('*').eq('username', currentUser.username).single();
+  if(error || !user){
+    alert("User not found!"); 
+    logout();
+    return;
+  }
+
+  currentUser = user;
+  selectedPhoto = user.photo || profileLinks[0];
+  document.getElementById("fullName").value = user.name || "";
 
   renderGallery();
-
-  if(localStorage.getItem(currentUser.username+"_kyc_done")){
-    document.getElementById("fullName").disabled = true;
-    document.getElementById("updateBtn").disabled = true;
-    document.getElementById("status").textContent = "Profile update already done ✅";
-    // show only selected photo
-    const gallery = document.getElementById("photoGallery");
-    gallery.innerHTML = "";
-    const img = document.createElement("img");
-    img.src = selectedPhoto;
-    img.style.width = "120px";
-    img.style.borderRadius = "50%";
-    img.style.border = "3px solid #003366";
-    gallery.appendChild(img);
-  }
+  document.getElementById("profilePic").src = selectedPhoto;
 }
 
 function renderGallery(){
@@ -93,52 +97,52 @@ function renderGallery(){
     img.onclick = () => {
       selectedPhoto = link;
       renderGallery();
+      document.getElementById("profilePic").src = selectedPhoto;
     };
     gallery.appendChild(img);
   });
 }
 
-function updateKYC(){
+async function updateKYC(){
   const name = document.getElementById("fullName").value.trim();
-  if(!name){ document.getElementById("status").textContent="Name cannot be empty!"; return; }
+  const statusEl = document.getElementById("status");
+  if(!name){ statusEl.textContent="Name cannot be empty!"; return; }
+
+  const { error } = await supabase.from('users').update({
+    name: name,
+    photo: selectedPhoto
+  }).eq('username', currentUser.username);
+
+  if(error){
+    statusEl.textContent = "Update failed!";
+    statusEl.style.color = "red";
+    return;
+  }
 
   currentUser.name = name;
   currentUser.photo = selectedPhoto;
-
-  // Save user
-  localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
   localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  localStorage.setItem(currentUser.username+"_kyc_done","true");
 
-  // Disable inputs
+  statusEl.textContent = "Profile updated ✅";
+  statusEl.style.color = "green";
+
+  // Update Dashboard automatically
+  window.dispatchEvent(new Event('storage'));
+
+  // Disable inputs after update
   document.getElementById("fullName").disabled = true;
   document.getElementById("updateBtn").disabled = true;
-
-  // Replace gallery with only selected photo
-  const gallery = document.getElementById("photoGallery");
-  gallery.innerHTML = "";
-  const img = document.createElement("img");
-  img.src = selectedPhoto;
-  img.style.width = "120px";
-  img.style.borderRadius = "50%";
-  img.style.border = "3px solid #003366";
-  gallery.appendChild(img);
-
-  document.getElementById("status").textContent = "Profile updated ✅";
-
-  window.dispatchEvent(new Event('storage')); // notify dashboard to refresh
 }
 
-function toggleMenu() {
+function toggleMenu(){
   const s = document.getElementById("sidebar");
   s.style.left = s.style.left === "0px" ? "-200px" : "0px";
 }
 
-function logout() {
+function logout(){
   localStorage.removeItem("currentUser");
   window.location.href="index.html";
 }
 </script>
-
 </body>
 </html>
