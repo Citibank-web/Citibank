@@ -6,7 +6,7 @@
 <title>Dashboard - Citibank</title>
 <style>
   body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
-  
+
   /* Topbar */
   .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
   .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
@@ -44,8 +44,6 @@
 </head>
 <body onload="loadDashboard()">
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
@@ -67,13 +65,15 @@
       <p>Account Number: <span id="accountNumber"></span></p>
       <p>Balance: $<span id="balance"></span></p>
       <div class="actions">
-        <button class="btn btn-transfer" onclick="transfer()">Transfer</button>
-        <button class="btn btn-withdraw" onclick="withdraw()">Withdraw</button>
+        <button class="btn btn-transfer" onclick="transferPrompt()">Transfer</button>
+        <button class="btn btn-withdraw" onclick="withdrawPrompt()">Withdraw</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Supabase JS -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://aaljhxyrqnewvhejtoik.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
@@ -81,20 +81,27 @@ const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser;
 
-// Load dashboard
-async function loadDashboard(){
+// Load user info from Supabase
+async function loadDashboard() {
   const stored = localStorage.getItem("currentUser");
   if(!stored) return window.location.href="index.html";
-  currentUser = JSON.parse(stored);
 
-  const { data:user, error } = await supabase.from('users').select('*').eq('username', currentUser.username).single();
-  if(error || !user) return window.location.href="index.html";
+  const sessionUser = JSON.parse(stored);
+
+  const { data:user, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', sessionUser.username)
+    .single();
+
+  if(error || !user) return alert("Failed to load user data");
+
   currentUser = user;
 
-  document.getElementById("profilePic").src = user.photo || "https://via.placeholder.com/120";
-  document.getElementById("fullName").textContent = user.name || user.username;
-  document.getElementById("accountNumber").textContent = user.acct;
-  document.getElementById("balance").textContent = (user.balance || 0).toFixed(2);
+  document.getElementById("profilePic").src = currentUser.photo || "https://via.placeholder.com/120";
+  document.getElementById("fullName").textContent = currentUser.name;
+  document.getElementById("accountNumber").textContent = currentUser.acct;
+  document.getElementById("balance").textContent = parseFloat(currentUser.balance).toFixed(2);
 }
 
 // Sidebar toggle
@@ -104,53 +111,72 @@ function toggleMenu() {
 }
 
 // Logout
-function logout() {
+function logout(){
   localStorage.removeItem("currentUser");
   window.location.href="index.html";
 }
 
-// Transfer function (demo alert, replace with actual implementation)
-async function transfer(){
-  alert("Transfer function will be implemented 🔐");
-}
+// Withdraw prompt
+async function withdrawPrompt() {
+  const amt = parseFloat(prompt("Enter withdrawal amount:"));
+  if(isNaN(amt) || amt <=0) return alert("Invalid amount");
+  if(amt > currentUser.balance) return alert("Insufficient balance");
 
-// Withdraw function
-async function withdraw(){
-  const amount = prompt("Enter amount to withdraw:");
-  if(!amount || isNaN(amount) || Number(amount)<=0){
-    alert("Invalid amount!");
-    return;
-  }
+  // Update balance in Supabase
+  const { error:updateError } = await supabase
+    .from('users')
+    .update({ balance: currentUser.balance - amt })
+    .eq('username', currentUser.username);
 
-  const withdrawAmount = Number(amount);
-  if(withdrawAmount > currentUser.balance){
-    alert("Insufficient balance!");
-    return;
-  }
-
-  const newBalance = currentUser.balance - withdrawAmount;
-
-  // Update user balance in Supabase
-  const { error:updateError } = await supabase.from('users').update({balance:newBalance}).eq('username', currentUser.username);
-  if(updateError){
-    alert("Failed to withdraw!");
-    return;
-  }
+  if(updateError) return alert("Failed to update balance");
 
   // Insert transaction
-  await supabase.from('transactions').insert([{
-    username: currentUser.username,
-    type: "Withdrawal",
-    amount: withdrawAmount,
-    status: "Successful",
-    date: new Date().toISOString()
-  }]);
+  const { error:txError } = await supabase
+    .from('transactions')
+    .insert([{ username: currentUser.username, type:"Withdrawal", amount:amt, status:"Successful", date: new Date().toISOString() }]);
 
-  alert(`$${withdrawAmount.toFixed(2)} withdrawn successfully ✅`);
-  currentUser.balance = newBalance;
-  document.getElementById("balance").textContent = newBalance.toFixed(2);
+  if(txError) return alert("Failed to record transaction");
+
+  alert("Withdrawal successful ✅");
+  loadDashboard();
 }
 
+// Transfer prompt (simulated)
+async function transferPrompt() {
+  const recipient = prompt("Enter recipient username:");
+  const amt = parseFloat(prompt("Enter transfer amount:"));
+  if(!recipient || isNaN(amt) || amt <=0) return alert("Invalid input");
+  if(amt > currentUser.balance) return alert("Insufficient balance");
+
+  // Check recipient exists
+  const { data:recUser, error:recError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('username', recipient)
+    .single();
+
+  if(recError || !recUser) return alert("Recipient not found");
+
+  // Deduct from sender
+  await supabase.from('users')
+    .update({ balance: currentUser.balance - amt })
+    .eq('username', currentUser.username);
+
+  // Add to recipient
+  await supabase.from('users')
+    .update({ balance: recUser.balance + amt })
+    .eq('username', recipient);
+
+  // Record transactions
+  await supabase.from('transactions').insert([
+    { username: currentUser.username, type:"Transfer Sent", amount:amt, status:"Successful", date:new Date().toISOString() },
+    { username: recipient, type:"Transfer Received", amount:amt, status:"Successful", date:new Date().toISOString() }
+  ]);
+
+  alert(`Transfer of $${amt} to ${recipient} successful ✅`);
+  loadDashboard();
+}
 </script>
+
 </body>
 </html>
