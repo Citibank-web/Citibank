@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,198 +5,161 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel - Citibank</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
-.topbar { background:#003366; color:white; padding:15px; display:flex; justify-content:space-between; align-items:center; }
-.topbar h2 { margin:0; }
-.topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
-.content { padding:20px; max-width:700px; margin:20px auto; background:white; border-radius:12px; box-shadow:0 8px 20px rgba(0,0,0,.05); }
-.card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 6px 15px rgba(0,0,0,.05); }
-.card h3 { margin-top:0; color:#003366; }
-input, select, button { padding:10px; margin:10px 0; width:100%; border-radius:5px; border:1px solid #ccc; font-size:16px; }
-button { cursor:pointer; background:#003366; color:white; font-weight:600; transition:0.2s; }
-button:hover { background:#0055a5; }
-.deleteBtn { background:#cc3300; margin-top:5px; }
-.deleteBtn:hover { background:#ff4d4d; }
-#status { font-weight:600; margin-top:10px; color:red; }
+  body { font-family: Arial, sans-serif; margin:0; display:flex; background:#f4f6f8; }
+
+  /* Sidebar */
+  .sidebar {
+    width:60px; background:#003366; color:white; height:100vh; padding-top:20px; display:flex; flex-direction:column; align-items:center;
+  }
+  .sidebar a { color:white; text-decoration:none; display:flex; flex-direction:column; align-items:center; padding:15px 0; width:100%; font-size:18px; }
+  .sidebar a.active { background:#0055a5; }
+  .sidebar a:hover { background:#0055a5; }
+
+  /* Content */
+  .content { flex:1; padding:40px; display:flex; flex-direction:column; align-items:center; }
+
+  h2 { color:#003366; margin-bottom:20px; }
+
+  /* Table */
+  table { border-collapse: collapse; width:100%; max-width:900px; background:white; border-radius:12px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,0.05); }
+  th, td { padding:12px 15px; text-align:left; }
+  th { background:#003366; color:white; }
+  tr:nth-child(even) { background:#f4f6f8; }
+  tr:hover { background:#e0e7ff; }
+
+  button { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:600; margin:2px; }
+  .approve { background:green; color:white; }
+  .reject { background:red; color:white; }
+  .create { background:#0066cc; color:white; margin-bottom:15px; }
+
+  /* Form */
+  #createUserForm { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  #createUserForm input { padding:8px; border-radius:6px; border:1px solid #ccc; flex:1; min-width:120px; }
 </style>
 </head>
-<body onload="loadAdmin()">
+<body>
 
-<div class="topbar">
-  <h2>Admin Panel</h2>
-  <button onclick="logout()">Logout</button>
+<div class="sidebar">
+  <a href="Dashboard.html" id="link-dashboard">🏠<span>Dash</span></a>
+  <a href="kyc.html" id="link-kyc">📝<span>KYC</span></a>
+  <a href="history.html" id="link-history">📜<span>History</span></a>
+  <a href="admin.html" id="link-admin" class="active">🛠️<span>Admin</span></a>
+  <a href="#" id="logoutLink">🚪<span>Logout</span></a>
 </div>
 
 <div class="content">
+  <h2>Admin Panel</h2>
 
-  <!-- ADD BALANCE CARD -->
-  <div class="card">
-    <h3>Add Balance to User</h3>
-    <input type="text" id="username" placeholder="Enter user email">
-    <input type="number" id="amount" placeholder="Enter amount to deposit">
-    <button onclick="addBalance()">Add Balance</button>
-  </div>
+  <form id="createUserForm">
+    <input type="email" placeholder="Email" id="newEmail" required>
+    <input type="password" placeholder="Password" id="newPassword" required>
+    <input type="text" placeholder="Full Name" id="newFullName" required>
+    <input type="text" placeholder="Account #" id="newAcct" required>
+    <input type="number" placeholder="Balance" id="newBalance" required>
+    <input type="text" placeholder="Photo URL" id="newPhoto" required>
+    <button type="submit" class="create">Create User</button>
+  </form>
 
-  <!-- CREATE USER CARD -->
-  <div class="card">
-    <h3>Create New User</h3>
-    <input type="email" id="newEmail" placeholder="Email">
-    <input type="password" id="newPassword" placeholder="Password">
-    <input type="text" id="newName" placeholder="Full Name">
-    <input type="number" id="newBalance" placeholder="Opening Balance">
-    <select id="newPhoto">
-      <option value="https://i.pravatar.cc/150?u=user1">Photo 1</option>
-      <option value="https://i.pravatar.cc/150?u=user2">Photo 2</option>
-      <option value="https://i.pravatar.cc/150?u=user3">Photo 3</option>
-    </select>
-    <button onclick="createUser()">Create User</button>
-  </div>
-
-  <!-- DELETE USER CARD -->
-  <div class="card">
-    <h3>Delete User</h3>
-    <input type="text" id="delEmail" placeholder="Enter user email to delete">
-    <button class="deleteBtn" onclick="deleteUser()">Delete User</button>
-  </div>
-
-  <p id="status"></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Account #</th>
+        <th>Balance</th>
+        <th>KYC</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="userTable"></tbody>
+  </table>
 </div>
 
 <script type="module">
 import { supabase } from './supabase.js';
 
-// Current logged in admin
-let currentUser;
+// Logout
+document.getElementById("logoutLink").addEventListener("click", async () => {
+  await supabase.auth.signOut();
+  location.href = "index.html";
+});
 
-async function loadAdmin(){
-  const { data: { user } } = await supabase.auth.getUser();
-  if(!user || user.email !== "admin@example.com") {
-    alert("Access Denied ❌ Only Admin can access this page");
-    window.location.href = "index.html";
-  }
-  currentUser = user;
+// Load all users
+async function loadUsers() {
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if(authError || !user) location.href="index.html";
+
+  const { data, error } = await supabase.from("users").select("*");
+  if(error) return alert("Error loading users: " + error.message);
+
+  const tbody = document.getElementById("userTable");
+  tbody.innerHTML = "";
+
+  data.forEach(u => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${u.full_name}</td>
+      <td>${u.email}</td>
+      <td>${u.account_number}</td>
+      <td>$${u.balance.toFixed(2)}</td>
+      <td>${u.kyc_done ? '✅' : '❌'}</td>
+      <td>
+        <button class="approve" onclick="approveUser('${u.id}')">Approve</button>
+        <button class="reject" onclick="rejectUser('${u.id}')">Reject</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
-// CREATE USER
-async function createUser(){
-  const email = document.getElementById("newEmail").value.trim();
-  const password = document.getElementById("newPassword").value.trim();
-  const fullName = document.getElementById("newName").value.trim();
-  const balance = Number(document.getElementById("newBalance").value);
+// Approve/reject placeholder functions
+async function approveUser(id) {
+  alert("Approved user: " + id);
+  // Implement update logic in Supabase if needed
+}
+
+async function rejectUser(id) {
+  alert("Rejected user: " + id);
+  // Implement update logic in Supabase if needed
+}
+
+// Create user programmatically
+document.getElementById("createUserForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = document.getElementById("newEmail").value;
+  const password = document.getElementById("newPassword").value;
+  const fullName = document.getElementById("newFullName").value;
+  const acct = document.getElementById("newAcct").value;
+  const balance = parseFloat(document.getElementById("newBalance").value);
   const photo = document.getElementById("newPhoto").value;
 
-  if(!email || !password || !fullName || isNaN(balance)){
-    document.getElementById("status").textContent="All fields are required!";
-    return;
-  }
+  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    email, password
+  });
 
-  try{
-    // 1️⃣ Create Auth user
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true
-    });
-    if(authError) throw authError;
+  if(authError) return alert("Error creating auth user: " + authError.message);
 
-    const userId = authUser.user.id;
+  const userId = authUser.user.id;
 
-    // 2️⃣ Insert into users table
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{
-        id: userId,
-        full_name: fullName,
-        account_number: generateAccountNumber(),
-        balance: balance,
-        photo: photo,
-        transaction_history: []
-      }]);
-    if(error) throw error;
+  const { data, error } = await supabase.from("users").insert([{
+    id: userId,
+    full_name: fullName,
+    email,
+    account_number: acct,
+    balance,
+    photo,
+    kyc_done: false,
+    transaction_history: []
+  }]);
 
-    document.getElementById("status").textContent="User created successfully ✅";
-  } catch(err){
-    console.error(err);
-    document.getElementById("status").textContent="Error: " + err.message;
-  }
-}
+  if(error) return alert("Error creating user profile: " + error.message);
 
-// ADD BALANCE
-async function addBalance(){
-  const email = document.getElementById("username").value.trim();
-  const amount = Number(document.getElementById("amount").value);
-  if(!email || isNaN(amount) || amount <= 0){
-    document.getElementById("status").textContent="Enter valid email and amount!";
-    return;
-  }
+  alert("User created successfully!");
+  document.getElementById("createUserForm").reset();
+  loadUsers();
+});
 
-  try{
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
-    if(userError) throw userError;
-
-    const newBalance = userData.balance + amount;
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ balance: newBalance })
-      .eq("id", userData.id);
-    if(updateError) throw updateError;
-
-    document.getElementById("status").textContent=`$${amount} added to ${email} ✅`;
-  } catch(err){
-    console.error(err);
-    document.getElementById("status").textContent="Error: "+err.message;
-  }
-}
-
-// DELETE USER
-async function deleteUser(){
-  const email = document.getElementById("delEmail").value.trim();
-  if(!email){
-    document.getElementById("status").textContent="Enter user email!";
-    return;
-  }
-
-  try{
-    // Get user ID first
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("*")
-      .eq("email", email)
-      .single();
-    if(userError) throw userError;
-
-    // Delete from users table
-    const { error: deleteProfileError } = await supabase
-      .from("users")
-      .delete()
-      .eq("id", userData.id);
-    if(deleteProfileError) throw deleteProfileError;
-
-    // Delete from Auth
-    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(userData.id);
-    if(deleteAuthError) throw deleteAuthError;
-
-    document.getElementById("status").textContent=`User ${email} deleted ✅`;
-  } catch(err){
-    console.error(err);
-    document.getElementById("status").textContent="Error: "+err.message;
-  }
-}
-
-// Generate random 10-digit account number
-function generateAccountNumber(){
-  return Math.floor(1000000000 + Math.random() * 9000000000).toString();
-}
-
-// LOGOUT
-async function logout(){
-  await supabase.auth.signOut();
-  window.location.href="index.html";
-}
+loadUsers();
 </script>
 
 </body>
