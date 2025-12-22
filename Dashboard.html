@@ -5,76 +5,129 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; overflow-x:hidden; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background: #f4f6f8;
+    display: flex;
+    min-height: 100vh;
+  }
 
-  /* Sidebar */
+  /* Sidebar - small width */
   .sidebar {
-    width:220px; background:#003366; color:white; position:fixed; top:0; left:-220px; height:100%;
-    padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; overflow:auto;
+    width: 80px;
+    background: #003366;
+    color: white;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    padding-top: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1000;
   }
   .sidebar a {
-    display:block; padding:15px; color:white; text-decoration:none; font-weight:500; cursor:pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    width: 100%;
+    padding: 15px 0;
+    transition: 0.2s;
   }
-  .sidebar a.active { background:#0055a5; }
-  .sidebar a:hover { background:#0055a5; }
+  .sidebar a span { font-size: 12px; margin-top: 4px; }
+  .sidebar a.active, .sidebar a:hover { background: #0055a5; }
 
-  /* Content */
+  /* Main content - centered */
+  .content-wrapper {
+    margin-left: 80px;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+  }
   .content {
-    margin-left:0; padding:20px; transition: margin-left 0.3s;
-  }
-
-  /* Toggle button */
-  #toggleBtn {
-    position:fixed; top:20px; left:20px; z-index:1100; font-size:26px; cursor:pointer;
-    background:#003366; color:white; padding:10px 12px; border-radius:6px; user-select:none;
+    max-width: 800px;
+    width: 100%;
   }
 
   /* Profile card */
-  .card { background:white; border-radius:12px; padding:20px; margin-top:20px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; flex-wrap:wrap; justify-content:center;
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin:10px; object-fit:cover; }
-  .info { display:flex; flex-direction:column; margin:10px; text-align:center; }
+  .profile-pic {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #003366;
+    margin: 10px;
+    object-fit: cover;
+  }
+  .info {
+    display: flex;
+    flex-direction: column;
+    margin: 10px;
+    text-align: center;
+  }
   .info h3 { margin:0; font-size:24px; color:#003366; }
   .info p { margin:4px 0; font-size:16px; color:#555; }
-  .actions { display:flex; gap:15px; margin-top:10px; justify-content:center; flex-wrap:wrap; }
+  .actions {
+    display:flex;
+    gap:15px;
+    margin-top:10px;
+    justify-content:center;
+    flex-wrap: wrap;
+  }
   .btn { padding:12px 20px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
   .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
   .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
   .btn:hover { opacity:0.9; }
 
-  /* Sidebar open state */
-  .sidebar.show { left:0; }
-  .content.shift { margin-left:220px; }
-
   /* Mobile */
   @media(max-width:768px){
-    .content.shift { margin-left:0; }
+    .sidebar { width:60px; }
+    .content-wrapper { margin-left: 60px; padding: 10px; }
   }
 </style>
 </head>
 <body>
 
-<div id="toggleBtn">☰</div>
-
+<!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-  <a href="Dashboard.html" class="menu-link">🏠 Dashboard</a>
-  <a href="kyc.html" class="menu-link">📝 KYC</a>
-  <a href="history.html" class="menu-link">📜 Transaction History</a>
-  <a href="admin.html" class="menu-link">🛠️ Admin Panel</a>
-  <a id="logoutLink" class="menu-link">🚪 Logout</a>
+  <a href="Dashboard.html" id="link-dashboard">🏠<span>Dash</span></a>
+  <a href="kyc.html" id="link-kyc">📝<span>KYC</span></a>
+  <a href="history.html" id="link-history">📜<span>History</span></a>
+  <a href="admin.html" id="link-admin">🛠️<span>Admin</span></a>
+  <a href="#" id="logoutLink">🚪<span>Logout</span></a>
 </div>
 
-<div class="content" id="mainContent">
-  <div class="card">
-    <img id="profilePic" class="profile-pic" src="">
-    <div class="info">
-      <h3 id="fullName">Loading...</h3>
-      <p>Account Number: <span id="accountNumber">--</span></p>
-      <p>Balance: $<span id="balance">0.00</span></p>
-      <div class="actions">
-        <button class="btn btn-transfer" onclick="alert('Account Locked 🔐')">Transfer</button>
-        <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐')">Withdraw</button>
+<!-- Main content centered -->
+<div class="content-wrapper">
+  <div class="content">
+    <div class="card">
+      <img id="profilePic" class="profile-pic" src="">
+      <div class="info">
+        <h3 id="fullName">Loading...</h3>
+        <p>Account Number: <span id="accountNumber">--</span></p>
+        <p>Balance: $<span id="balance">0.00</span></p>
+        <div class="actions">
+          <button class="btn btn-transfer" onclick="alert('Account Locked 🔐')">Transfer</button>
+          <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐')">Withdraw</button>
+        </div>
       </div>
     </div>
   </div>
@@ -83,25 +136,17 @@
 <script type="module">
 import { supabase } from './supabase.js';
 
-const sidebar = document.getElementById('sidebar');
-const toggleBtn = document.getElementById('toggleBtn');
-const content = document.getElementById('mainContent');
+// Highlight active page
+const path = location.pathname.split("/").pop();
+const links = {
+  "Dashboard.html": "link-dashboard",
+  "kyc.html": "link-kyc",
+  "history.html": "link-history",
+  "admin.html": "link-admin"
+};
+if(links[path]) document.getElementById(links[path]).classList.add('active');
 
-// Toggle sidebar and shift content
-toggleBtn.addEventListener('click', () => {
-  sidebar.classList.toggle('show');
-  content.classList.toggle('shift');
-});
-
-// Collapse sidebar when a menu item is clicked
-document.querySelectorAll('.menu-link').forEach(link => {
-  link.addEventListener('click', () => {
-    sidebar.classList.remove('show');
-    content.classList.remove('shift');
-  });
-});
-
-// Load Supabase user info
+// Load Supabase user
 async function loadDashboard() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if(authError || !user) location.href = "index.html";
