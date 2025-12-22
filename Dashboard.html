@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; display:flex; }
+  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
 
   /* Sidebar */
   .sidebar {
-    width:220px; background:#003366; color:white; position:fixed; top:0; left:0; height:100%; padding-top:60px;
+    width:220px; background:#003366; color:white; position:fixed; top:0; left:-220px; height:100%; padding-top:60px;
     transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; overflow:auto;
   }
   .sidebar a {
@@ -18,15 +18,17 @@
   .sidebar a.active { background:#0055a5; }
   .sidebar a:hover { background:#0055a5; }
 
+  /* Sidebar visible */
+  .sidebar.show { left:0; }
+
   /* Content */
-  .content { margin-left:220px; padding:20px; flex:1; transition: margin-left 0.3s; }
+  .content { margin-left:0; padding:20px; transition: margin-left 0.3s; }
 
   /* Topbar */
   .topbar {
-    position:fixed; top:0; left:220px; right:0; height:60px; background:#003366; color:white;
-    display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:900;
+    position:fixed; top:0; left:0; right:0; height:60px; background:#003366; color:white;
+    display:flex; align-items:center; justify-content:flex-start; padding:0 20px; z-index:900;
   }
-  .topbar h2 { margin:0; }
   .topbar span { font-size:26px; cursor:pointer; }
 
   /* Profile card */
@@ -44,26 +46,22 @@
   /* Mobile */
   @media(max-width:768px){
     .sidebar { left:-220px; }
-    .topbar { left:0; }
-    .content { margin-left:0; }
     .sidebar.show { left:0; }
-    .topbar span { z-index:1001; }
   }
 </style>
 </head>
 <body>
 
 <div class="sidebar" id="sidebar">
-  <a href="Dashboard.html" id="link-dashboard">🏠 Dashboard</a>
-  <a href="kyc.html" id="link-kyc">📝 KYC</a>
-  <a href="history.html" id="link-history">📜 Transaction History</a>
-  <a href="admin.html" id="link-admin">🛠️ Admin Panel</a>
-  <a id="logoutLink">🚪 Logout</a>
+  <a href="Dashboard.html" class="menu-link">🏠 Dashboard</a>
+  <a href="kyc.html" class="menu-link">📝 KYC</a>
+  <a href="history.html" class="menu-link">📜 Transaction History</a>
+  <a href="admin.html" class="menu-link">🛠️ Admin Panel</a>
+  <a id="logoutLink" class="menu-link">🚪 Logout</a>
 </div>
 
 <div class="topbar">
   <span id="toggleBtn">☰</span>
-  <h2>Dashboard</h2>
 </div>
 
 <div class="content">
@@ -87,22 +85,19 @@ import { supabase } from './supabase.js';
 const sidebar = document.getElementById('sidebar');
 const toggleBtn = document.getElementById('toggleBtn');
 
-// Mobile sidebar toggle
+// Toggle sidebar open/close
 toggleBtn.addEventListener('click', () => {
   sidebar.classList.toggle('show');
 });
 
-// Highlight active page
-const path = location.pathname.split("/").pop();
-const links = {
-  "Dashboard.html": "link-dashboard",
-  "kyc.html": "link-kyc",
-  "history.html": "link-history",
-  "admin.html": "link-admin"
-};
-if(links[path]) document.getElementById(links[path]).classList.add('active');
+// Collapse sidebar when a menu item is clicked
+document.querySelectorAll('.menu-link').forEach(link => {
+  link.addEventListener('click', () => {
+    sidebar.classList.remove('show');
+  });
+});
 
-// Load Supabase user
+// Load Supabase user info
 async function loadDashboard() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if(authError || !user) location.href = "index.html";
