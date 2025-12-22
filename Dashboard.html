@@ -5,41 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
-
-  /* Topbar */
-  .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar span { font-size:26px; cursor:pointer; margin-right:10px; }
-  .topbar h2 { margin:0; }
-
-  /* Sidebar */
-  .sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
-  .sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
-  .sidebar a:hover { background:#f0f0f0; }
-
-  /* Main content */
-  .content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
-
-  /* Profile card */
-  .card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
-  .profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
-  .info { display:flex; flex-direction:column; }
-  .info h3 { margin:0; font-size:24px; color:#003366; }
-  .info p { margin:4px 0; font-size:16px; color:#555; }
-
-  /* Buttons */
-  .actions { display:flex; gap:15px; margin-top:10px; }
-  .btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
-  .btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
-  .btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
-  .btn:hover { opacity:0.9; }
-
-  @media(max-width:768px){
-    .content { margin-left:10px; padding:10px; }
-    .card { flex-direction:column; align-items:center; text-align:center; }
-    .profile-pic { margin-bottom:15px; margin-right:0; }
-    .actions { flex-direction:column; }
-  }
+body { font-family: Arial,sans-serif; margin:0; background:#f4f6f8; }
+/* Topbar */
+.topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
+.topbar h2 { margin:0; }
+.topbar button { background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer; }
+/* Sidebar */
+.sidebar { width:220px; background:#fff; position:fixed; top:0; left:-220px; height:100%; padding-top:60px; transition:0.3s; box-shadow:2px 0 10px rgba(0,0,0,.1); z-index:1000; }
+.sidebar a { display:block; padding:15px; color:#003366; text-decoration:none; font-weight:500; }
+.sidebar a:hover { background:#f0f0f0; }
+/* Content */
+.content { margin-left:20px; padding:20px; max-width:1000px; margin-top:20px; }
+/* Profile card */
+.card { background:white; border-radius:12px; padding:20px; margin-bottom:20px; box-shadow:0 8px 20px rgba(0,0,0,0.05); display:flex; align-items:center; }
+.profile-pic { width:120px; height:120px; border-radius:50%; border:3px solid #003366; margin-right:20px; object-fit:cover; }
+.info { display:flex; flex-direction:column; }
+.info h3 { margin:0; font-size:24px; color:#003366; }
+.info p { margin:4px 0; font-size:16px; color:#555; }
+.actions { display:flex; gap:15px; margin-top:10px; }
+.btn { flex:1; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; transition:0.2s; font-weight:600; }
+.btn-transfer { background: linear-gradient(45deg,#0066cc,#3399ff); color:white; }
+.btn-withdraw { background: linear-gradient(45deg,#cc3300,#ff6666); color:white; }
+.btn:hover { opacity:0.9; }
+@media(max-width:768px){
+  .content { margin-left:10px; padding:10px; }
+  .card { flex-direction:column; align-items:center; text-align:center; }
+  .profile-pic { margin-bottom:15px; margin-right:0; }
+  .actions { flex-direction:column; }
+}
 </style>
 </head>
 <body>
@@ -47,7 +40,7 @@
 <div class="topbar">
   <span onclick="toggleMenu()">☰</span>
   <h2>Dashboard</h2>
-  <button onclick="logout()" style="background:#ff4d4f; color:white; border:none; border-radius:8px; padding:8px 15px; cursor:pointer;">Logout</button>
+  <button onclick="logout()">Logout</button>
 </div>
 
 <div class="sidebar" id="sidebar">
@@ -65,8 +58,8 @@
       <p>Account Number: <span id="accountNumber"></span></p>
       <p>Balance: $<span id="balance"></span></p>
       <div class="actions">
-        <button class="btn btn-transfer" onclick="alert('Account Locked 🔐 Contact Support')">Transfer</button>
-        <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐 Contact Support')">Withdraw</button>
+        <button class="btn btn-transfer" onclick="locked()">Transfer</button>
+        <button class="btn btn-withdraw" onclick="locked()">Withdraw</button>
       </div>
     </div>
   </div>
@@ -77,31 +70,26 @@ import { supabase } from './supabase.js';
 
 let currentUser;
 
-// Load Dashboard
 async function loadDashboard() {
-  // Get session user from Supabase
-  const { data: { session } } = await supabase.auth.getSession();
-  if(!session) return window.location.href = "index.html";
+  const { data: { user } } = await supabase.auth.getUser();
+  if(!user) location.href="index.html";
+  currentUser = user;
 
-  // Fetch profile from 'users' table
+  // Fetch user profile from "users" table
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single();
-
   if(error) {
-    alert("Failed to fetch profile: " + error.message);
+    console.error(error);
     return;
   }
 
-  currentUser = data;
-
-  // Populate dashboard
-  document.getElementById("profilePic").src = currentUser.photo || "https://i.pravatar.cc/150";
-  document.getElementById("fullName").innerText = currentUser.full_name || currentUser.name || "User";
-  document.getElementById("accountNumber").innerText = currentUser.account_number || "N/A";
-  document.getElementById("balance").innerText = currentUser.balance?.toFixed(2) || "0.00";
+  document.getElementById("fullName").innerText = data.full_name;
+  document.getElementById("accountNumber").innerText = data.account_number;
+  document.getElementById("balance").innerText = data.balance.toFixed(2);
+  document.getElementById("profilePic").src = data.photo;
 }
 
 // Sidebar toggle
@@ -110,19 +98,17 @@ function toggleMenu() {
   s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
-// Logout
-async function logout() {
-  await supabase.auth.signOut();
-  sessionStorage.clear();
-  window.location.href = "index.html";
+function logout() {
+  supabase.auth.signOut();
+  window.location.href="index.html";
 }
 
-// Listen for KYC/profile updates (if using sessionStorage events)
-window.addEventListener('storage', loadDashboard);
+function locked() {
+  alert("Account Restricted 🔐\nContact Support");
+}
 
-// Initialize dashboard
+// Load dashboard on page load
 loadDashboard();
 </script>
-
 </body>
 </html>
