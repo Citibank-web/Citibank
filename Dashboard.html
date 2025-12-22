@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - Citibank</title>
 <style>
-  body { font-family: 'Arial', sans-serif; margin:0; background:#f4f6f8; }
+  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
 
   /* Topbar */
   .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
@@ -65,8 +65,8 @@
       <p>Account Number: <span id="accountNumber"></span></p>
       <p>Balance: $<span id="balance"></span></p>
       <div class="actions">
-        <button class="btn btn-transfer" onclick="locked()">Transfer</button>
-        <button class="btn btn-withdraw" onclick="locked()">Withdraw</button>
+        <button class="btn btn-transfer" onclick="alert('Account Locked 🔐 Contact Support')">Transfer</button>
+        <button class="btn btn-withdraw" onclick="alert('Account Locked 🔐 Contact Support')">Withdraw</button>
       </div>
     </div>
   </div>
@@ -75,49 +75,52 @@
 <script type="module">
 import { supabase } from './supabase.js';
 
-let currentUser = null;
+let currentUser;
 
+// Load Dashboard
 async function loadDashboard() {
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if(userError || !user) {
-    location.href = "index.html";
-    return;
-  }
+  // Get session user from Supabase
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session) return window.location.href = "index.html";
 
+  // Fetch profile from 'users' table
   const { data, error } = await supabase
     .from('users')
     .select('*')
-    .eq('id', user.id)
+    .eq('id', session.user.id)
     .single();
 
-  if(error || !data) {
-    alert("User data not found!");
+  if(error) {
+    alert("Failed to fetch profile: " + error.message);
     return;
   }
 
   currentUser = data;
 
-  document.getElementById("fullName").innerText = data.name;
-  document.getElementById("accountNumber").innerText = data.acct;
-  document.getElementById("balance").innerText = "$" + Number(data.balance).toLocaleFixed(2);
-  document.getElementById("profilePic").src = data.photo || "https://via.placeholder.com/120";
+  // Populate dashboard
+  document.getElementById("profilePic").src = currentUser.photo || "https://i.pravatar.cc/150";
+  document.getElementById("fullName").innerText = currentUser.full_name || currentUser.name || "User";
+  document.getElementById("accountNumber").innerText = currentUser.account_number || "N/A";
+  document.getElementById("balance").innerText = currentUser.balance?.toFixed(2) || "0.00";
 }
 
-function locked() {
-  alert("Account Locked 🔐\nContact Support");
-}
-
+// Sidebar toggle
 function toggleMenu() {
   const s = document.getElementById("sidebar");
   s.style.left = s.style.left === "0px" ? "-220px" : "0px";
 }
 
+// Logout
 async function logout() {
   await supabase.auth.signOut();
-  location.href = "index.html";
+  sessionStorage.clear();
+  window.location.href = "index.html";
 }
 
-// Load dashboard on page load
+// Listen for KYC/profile updates (if using sessionStorage events)
+window.addEventListener('storage', loadDashboard);
+
+// Initialize dashboard
 loadDashboard();
 </script>
 
