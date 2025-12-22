@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transaction History - Citibank</title>
 <style>
-  body { font-family: Arial, sans-serif; margin:0; background:#f4f6f8; }
+  body { font-family: Arial; margin:0; background:#f4f6f8; }
   
   /* Topbar */
   .topbar { background:#003366; color:white; padding:15px; display:flex; align-items:center; justify-content:space-between; }
@@ -36,6 +36,8 @@
 </head>
 <body onload="loadHistory()">
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <div class="topbar">
   <h2>Transaction History</h2>
   <button onclick="logout()">Logout</button>
@@ -54,36 +56,45 @@
 </div>
 
 <script>
+const SUPABASE_URL = 'https://aaljhxyrqnewvhejtoik.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_52hZQtxrDZB4k_fLi8S0GQ_j5wma9lz';
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let currentUser;
 
-function loadHistory(){
-  const u = JSON.parse(localStorage.getItem("currentUser"));
-  if(!u){ window.location.href="index.html"; return; }
-  currentUser = u;
+// Load transaction history from Supabase
+async function loadHistory() {
+  const stored = localStorage.getItem("currentUser");
+  if(!stored) return window.location.href="index.html";
+  currentUser = JSON.parse(stored);
 
-  // Initialize history if not exists
-  if(!currentUser.history) {
-    currentUser.history = [
-      {date: new Date().toLocaleString(), type:"Withdrawal", amount:5000.00}
-    ];
-    localStorage.setItem(currentUser.username, JSON.stringify(currentUser));
-    localStorage.setItem("currentUser", JSON.stringify(currentUser));
-  }
+  // Fetch user transactions from Supabase
+  const { data:transactions, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('username', currentUser.username)
+    .order('date', { ascending:false });
 
-  renderHistory();
-}
-
-// Render transactions
-function renderHistory(){
   const container = document.getElementById("historyList");
   container.innerHTML = "";
-  currentUser.history.forEach(tx => {
+
+  if(error){
+    container.innerHTML = `<p style="color:red;">Failed to load transactions: ${error.message}</p>`;
+    return;
+  }
+
+  if(!transactions || transactions.length === 0){
+    container.innerHTML = `<p style="text-align:center;">No transactions yet</p>`;
+    return;
+  }
+
+  transactions.forEach(tx => {
     const div = document.createElement("div");
     div.className = "transaction-card";
     div.innerHTML = `
       <div class="tx-info">
         <span class="tx-type ${tx.type==="Deposit" ? "tx-deposit" : "tx-withdraw"}">${tx.type}</span>
-        <span class="tx-date">${tx.date}</span>
+        <span class="tx-date">${new Date(tx.date).toLocaleString()}</span>
       </div>
       <div class="tx-amount ${tx.type==="Deposit" ? "tx-deposit" : "tx-withdraw"}">$${tx.amount.toFixed(2)}</div>
     `;
@@ -102,9 +113,6 @@ function logout() {
   localStorage.removeItem("currentUser");
   window.location.href="index.html";
 }
-
-// Live update when admin adds deposit
-window.addEventListener('storage', loadHistory);
 </script>
 
 </body>
