@@ -102,6 +102,70 @@
     .sidebar { width:60px; }
     .content-wrapper { margin-left: 60px; padding: 10px; }
   }
+  /* MODAL OVERLAY */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* MODAL CARD */
+.modal-card {
+  background: #fff;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 14px;
+  text-align: center;
+  animation: slideDown 0.4s ease;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+}
+
+/* ICON */
+.modal-icon {
+  font-size: 50px;
+  margin-bottom: 10px;
+}
+
+/* TEXT */
+.modal-card h2 {
+  color: #003366;
+  margin-bottom: 10px;
+}
+
+.modal-card p {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* BUTTON */
+.modal-card button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: #003366;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.modal-card button:hover {
+  background: #0055a5;
+}
+
+/* ANIMATION */
+@keyframes slideDown {
+  from { transform: translateY(-40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 </style>
 </head>
 <body>
